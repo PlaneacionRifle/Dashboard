@@ -533,6 +533,15 @@ function fR(){
     seen.add(key); return true;
   });
 }
+// Helper: deduplica un array de registros ROTACION por referencia×coleccion (una ref puede estar en varios paquetes)
+function dedupR(arr){
+  const seen=new Set();
+  return arr.filter(r=>{
+    const key=`${r.referencia}||${r.coleccion}`;
+    if(seen.has(key)) return false;
+    seen.add(key); return true;
+  });
+}
 // fRAgg does NOT filter by paquete — AGG is at genero×categoria level, paquete filter affects only per-ref counts
 function fRAgg(){const rc=getRC();return ROTACION_AGG.filter(r=>r.canal===rc&&state.generos.has(r.genero)&&state.categorias.has(r.categoria)&&state.colecciones.has(r.coleccion));}
 
@@ -1240,7 +1249,7 @@ function rT4(){
   const ALL_CANALS=['TOTAL COMPAÑIA','TIENDAS','CADENAS','OUTLETS','ONLINE'];
   const CANAL_SHORT={'TOTAL COMPAÑIA':'Total Cía','TIENDAS':'Tiendas','CADENAS':'Cadenas','OUTLETS':'Outlets','ONLINE':'Online'};
   const canalData=ALL_CANALS.map(canal=>{
-    const cRefs=ROTACION.filter(r=>r.canal===canal&&state.generos.has(r.genero)&&state.categorias.has(r.categoria)&&state.colecciones.has(r.coleccion)&&state.paquetes.has(r.paquete));
+    const cRefs=dedupR(ROTACION.filter(r=>r.canal===canal&&state.generos.has(r.genero)&&state.categorias.has(r.categoria)&&state.colecciones.has(r.coleccion)&&state.paquetes.has(r.paquete)));
     const uAll=new Set(cRefs.map(r=>r.referencia)).size;
     const uCumple=new Set(cRefs.filter(r=>r.cumple).map(r=>r.referencia)).size;
     const ven=cRefs.reduce((s,r)=>s+r.venta,0);
@@ -1333,12 +1342,12 @@ function rT4(){
 function rT5(){
   // Always filters to Jeans, respects all global filters
   const rc=getRC();
-  const dataRef=ROTACION.filter(r=>
+  const dataRef=dedupR(ROTACION.filter(r=>
     r.canal===rc && r.categoria==='Jeans' &&
     state.generos.has(r.genero) && state.colecciones.has(r.coleccion) &&
     state.paquetes.has(r.paquete) &&
     (state.valueFilter===''||(state.valueFilter==='VALUE'&&r.is_value)||(state.valueFilter==='NORMAL'&&!r.is_value))
-  );
+  ));
 
   if(!dataRef.length){
     document.getElementById('kpi5').innerHTML='<div style="padding:40px;color:var(--text3);text-align:center">🔍 Sin datos de Jeans para los filtros seleccionados</div>';
@@ -1514,7 +1523,7 @@ function rT5(){
 function rT6(){
   const rc=getRC();
   // Filter eligible refs: ingreso >= 100, dias >= 10, eficiencia SI/NO
-  const eligible=ROTACION.filter(r=>
+  const eligible=dedupR(ROTACION.filter(r=>
     r.canal===rc &&
     state.generos.has(r.genero) &&
     state.categorias.has(r.categoria) &&
@@ -1522,7 +1531,7 @@ function rT6(){
     state.paquetes.has(r.paquete) &&
     (state.valueFilter===''||(state.valueFilter==='VALUE'&&r.is_value)||(state.valueFilter==='NORMAL'&&!r.is_value)) &&
     r.ingreso>=100 && r.dias>=10
-  );
+  ));
 
   if(!eligible.length){
     document.getElementById('tb6-best').innerHTML=`<tr><td colspan="13" style="text-align:center;padding:30px;color:var(--text3)">Sin referencias elegibles para los filtros seleccionados</td></tr>`;
