@@ -722,6 +722,8 @@ function rT2(){
     const colRefs=dataRef.filter(rf=>rf.coleccion===c);
     const nRefs=new Set(colRefs.map(rf=>rf.referencia)).size;
     const nCumple=new Set(colRefs.filter(rf=>rf.cumple).map(rf=>rf.referencia)).size;
+    // Inventario real (suma del campo inventario por referencia, no confundir con ingreso/compra)
+    const totalInv=colRefs.reduce((s,rf)=>s+(rf.inventario||0),0);
     // Check if collection is closed — uses dedicated list, not per-record flag
     const isClosed=COLECCIONES_CERRADAS.has(c);
     // For closed: replace semaphore icon with lock, use amber color
@@ -738,7 +740,8 @@ function rT2(){
       <div style="margin-top:8px;font-size:10px;color:var(--text2);line-height:1.7;text-align:center">
         <div>🔄 <b>${fmtP(rotRd)}</b> real &nbsp;/&nbsp; <b>${fmtP(rotId)}</b> ideal</div>
         <div>📅 <b>${Math.round(diasCol)} días</b> promedio en tienda</div>
-        <div>📦 <b>${fmtN(r.ven)}</b> und vendidas &nbsp;·&nbsp; inv <b>${fmtN(r.ing)}</b></div>
+        <div>📦 <b>${fmtN(r.ven)}</b> und vendidas &nbsp;·&nbsp; compra <b>${fmtN(r.ing)}</b></div>
+        <div>🏪 Inv actual: <b>${fmtN(totalInv)}</b> und</div>
         <div style="margin-top:3px">
           <span style="color:var(--green)">✅ ${nCumple} cumplen</span>
           &nbsp;·&nbsp;
@@ -1012,9 +1015,9 @@ function rT3(){
   const bA={},bF={};
   data.forEach(r=>{
     const a=nA(r.atributo);
-    if(!bA[a])bA[a]={cp:0,tot:0,venta:0,ingreso:0,dias:[],refs:new Set()};
+    if(!bA[a])bA[a]={cp:0,tot:0,venta:0,ingreso:0,inventario:0,dias:[],refs:new Set()};
     bA[a].tot++; if(r.cumple)bA[a].cp++;
-    bA[a].venta+=r.venta; bA[a].ingreso+=r.ingreso;
+    bA[a].venta+=r.venta; bA[a].ingreso+=r.ingreso; bA[a].inventario+=(r.inventario||0);
     if(r.dias>0) bA[a].dias.push(r.dias);
     bA[a].refs.add(r.referencia);
     const f=nF(r.fit);
@@ -1050,7 +1053,8 @@ function rT3(){
       <div class="sem-bar"><div class="sem-bar-fill" style="width:${bw}%;background:${bc}"></div></div>
       <div style="margin-top:8px;font-size:10px;color:var(--text2);line-height:1.7;text-align:center">
         <div>🔄 <b>${fmtP(rotR)}</b> real &nbsp;/&nbsp; <b>${fmtP(rotI)}</b> ideal</div>
-        <div>📦 <b>${fmtN(r.venta)}</b> und vendidas &nbsp;·&nbsp; inv <b>${fmtN(r.ingreso)}</b></div>
+        <div>📦 <b>${fmtN(r.venta)}</b> und vendidas &nbsp;·&nbsp; compra <b>${fmtN(r.ingreso)}</b></div>
+        <div>🏪 Inv actual: <b>${fmtN(r.inventario)}</b> und</div>
         <div style="margin-top:3px">
           <span style="color:var(--green)">✅ ${r.cp} cumplen</span>
           &nbsp;·&nbsp;
