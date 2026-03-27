@@ -1370,8 +1370,8 @@ function rT5(){
 
   document.getElementById('kpi5').innerHTML=[
     {i:'📦',l:'Refs Evaluadas',v:fmtN(refsAll),s:'referencias únicas',kc:'var(--blue-bg)'},
-    {i:'✅',l:'Refs Cumplen',v:fmtN(refsCumple),s:'≥ 90% rotación ideal',kc:'var(--green-bg)',vc:'var(--green)'},
-    {i:'❌',l:'Refs No Cumplen',v:fmtN(refsNoCumple),s:'< 90% rotación ideal',kc:'var(--red-bg)',vc:'var(--red)'},
+    {i:'✅',l:'Refs Cumplen',v:fmtN(refsCumple),s:`≥ 90% rot. ideal · ${refsAll>0?(refsCumple/refsAll*100).toFixed(1):0}% del total`,kc:'var(--green-bg)',vc:'var(--green)'},
+    {i:'❌',l:'Refs No Cumplen',v:fmtN(refsNoCumple),s:`< 90% rot. ideal · ${refsAll>0?(refsNoCumple/refsAll*100).toFixed(1):0}% del total`,kc:'var(--red-bg)',vc:'var(--red)'},
     {i:'📊',l:'Cumpl. Rotación',v:fmtP(cumplG),s:'Venta/Ingreso ÷ Ideal',kc:cumplG>=0.9?'var(--green-bg)':cumplG>=0.7?'var(--yellow-bg)':'var(--red-bg)',vc:semClr(cumplG)},
     {i:'🔄',l:'Rotación Real',v:fmtP(rotR),s:`Ideal: ${fmtP(rotI)}`,kc:'var(--blue-bg)'},
     {i:'📅',l:'Días Promedio',v:Math.round(diasProm)+'d',s:`${Math.round(diasProm/7)} semanas en tienda`,kc:'var(--blue-bg)'},
@@ -1451,8 +1451,8 @@ function rT5(){
       <td>${fmtP(rotRf)} / ${fmtP(rotIf)}</td>
       <td>${Math.round(d)}d · ${Math.round(d/7)}sem</td>
       <td>${b.refs.size}</td>
-      <td style="color:var(--green)">${b.cumple.size}</td>
-      <td style="color:var(--red)">${b.noCumple.size}</td>
+      <td style="color:var(--green)">${b.cumple.size} <span style="font-size:10px;color:var(--text2)">(${b.refs.size>0?(b.cumple.size/b.refs.size*100).toFixed(0):0}%)</span></td>
+      <td style="color:var(--red)">${b.noCumple.size} <span style="font-size:10px;color:var(--text2)">(${b.refs.size>0?(b.noCumple.size/b.refs.size*100).toFixed(0):0}%)</span></td>
     </tr>`;
     const detailRows=refRows.map(rf=>{
       const estado=rf.cumple?'<span class="pill pill-g">✅ SI</span>':'<span class="pill pill-r">❌ NO</span>';
