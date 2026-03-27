@@ -516,7 +516,7 @@ function fB(){return BUDGET.filter(r=>state.canales.has(r.CANAL)&&state.generos.
 function getRC(){const s=[...state.canales];if(s.length===1){const m={TIENDAS:'TIENDAS',CADENAS:'CADENAS',OUTLETS:'OUTLETS',ONLINE:'ONLINE'};return m[s[0]]||'TOTAL COMPAÑIA';}return 'TOTAL COMPAÑIA';}
 function fR(){
   const rc=getRC();
-  return ROTACION.filter(r=>
+  const filtered=ROTACION.filter(r=>
     r.canal===rc &&
     state.generos.has(r.genero) &&
     state.categorias.has(r.categoria) &&
@@ -524,6 +524,14 @@ function fR(){
     state.paquetes.has(r.paquete) &&
     (state.valueFilter===''|| (state.valueFilter==='VALUE'&&r.is_value) || (state.valueFilter==='NORMAL'&&!r.is_value))
   );
+  // Deduplicar: una misma referencia puede estar en múltiples paquetes con datos idénticos.
+  // Se conserva solo un registro por combinación referencia×coleccion×canal.
+  const seen=new Set();
+  return filtered.filter(r=>{
+    const key=`${r.referencia}||${r.coleccion}`;
+    if(seen.has(key)) return false;
+    seen.add(key); return true;
+  });
 }
 // fRAgg does NOT filter by paquete — AGG is at genero×categoria level, paquete filter affects only per-ref counts
 function fRAgg(){const rc=getRC();return ROTACION_AGG.filter(r=>r.canal===rc&&state.generos.has(r.genero)&&state.categorias.has(r.categoria)&&state.colecciones.has(r.coleccion));}
