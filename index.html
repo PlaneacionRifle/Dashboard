@@ -944,16 +944,20 @@ function rT2(){
 
   if(multipleGenders){
     // Ambos géneros → mostrar subtotales por género + total general al final
+    // IMPORTANTE: usar ROTACION_AGG (no ROTACION_SUB) para que los totales
+    // coincidan con el KPI. ROTACION_SUB agrupa por paquete y mezcla géneros
+    // en paquetes mixtos, inflando/desinflando los totales por género.
     ['Femenino','Masculino','Unisex'].filter(g=>activeGens.includes(g)).forEach(g=>{
-      const recs=ROTACION_SUB.filter(r=>r.canal===rc&&r.genero===g&&activeCols.includes(r.coleccion));
+      const recs=ROTACION_AGG.filter(r=>r.canal===rc&&r.genero===g&&activeCols.includes(r.coleccion)&&state.categorias.has(r.categoria));
       extraRows+=summaryRow(`📊 Total ${g}`,recs,'subtotal-row');
     });
     const totRecs=ROTACION_TOT.filter(r=>r.canal===rc&&activeCols.includes(r.coleccion));
     extraRows+=summaryRow('📊 TOTAL GENERAL',totRecs,'total-row');
   } else {
     // Un solo género activo → mostrar total de ese género
+    // IMPORTANTE: usar ROTACION_AGG para consistencia con el KPI
     const g=activeGens.find(g=>g!=='Unisex')||activeGens[0];
-    const recs=ROTACION_SUB.filter(r=>r.canal===rc&&r.genero===g&&activeCols.includes(r.coleccion));
+    const recs=ROTACION_AGG.filter(r=>r.canal===rc&&r.genero===g&&activeCols.includes(r.coleccion)&&state.categorias.has(r.categoria));
     extraRows+=summaryRow(`📊 Total ${g}`,recs,'total-row');
   }
 
