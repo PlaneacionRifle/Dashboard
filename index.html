@@ -1257,7 +1257,7 @@ function rT4(){
     {i:'📊',l:'% Cumplimiento',v:(tA>0?(tC/tA*100).toFixed(1):0)+'%',s:'del total de refs evaluadas',kc:pC>=0.9?'var(--green-bg)':pC>=0.7?'var(--yellow-bg)':'var(--red-bg)',vc:semClr(pC)},
   ].map(k=>`<div class="kpi-card" style="--kc:${k.kc}"><div class="kpi-icon">${k.i}</div><div class="kpi-label">${k.l}</div><div class="kpi-val" style="${k.vc?'color:'+k.vc:''}">${k.v}</div><div class="kpi-sub">${k.s}</div></div>`).join('');
 
-  document.getElementById('t4cnt').textContent=`${tA} refs · ${GEN_ORDER.filter(g=>bGen[g]).length} géneros`;
+  document.getElementById('t4cnt').textContent=`${tA} refs · ${Object.keys(bGen).length} géneros`;
 
   // Helpers de píldoras de color
   const pPill=(p,txt)=>{
@@ -1285,7 +1285,8 @@ function rT4(){
   </tr>`;
 
   // ── Filas por Género (expandibles) → Categoría ──
-  GEN_ORDER.filter(g=>bGen[g]).forEach(g=>{
+  const gensSorted=Object.keys(bGen).sort((a,z)=>{const o=GEN_ORDER;return(o.indexOf(a)<0?99:o.indexOf(a))-(o.indexOf(z)<0?99:o.indexOf(z));});
+  gensSorted.forEach(g=>{
     const b=bGen[g];
     const tot=b.refs.size, cp=b.cumple.size, nc=b.noCumple.size;
     const pG=tot>0?cp/tot:0;
