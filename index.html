@@ -390,12 +390,24 @@ tr.total-row td:first-child{border-left:3px solid var(--green);}
 <div class="tab-pane" id="t4">
   <div class="sec-title">Resumen de Cumplimiento de Referencias</div>
   <div class="kpi-row" id="kpi4"></div>
-  <div class="chart-row">
-    <div class="chart-card"><div class="chart-title">% Cumplimiento por Canal</div><div><canvas id="ch4b" height="220"></canvas></div></div>
-    <div class="chart-card"><div class="chart-title">Cumplen vs No Cumplen por Género</div><div><canvas id="ch4c" height="220"></canvas></div></div>
-  </div>
-  <div class="chart-row-1">
-    <div class="chart-card"><div class="chart-title">% Cumplimiento por Categoría</div><div><canvas id="ch4d" height="200"></canvas></div></div>
+  <div class="table-card" style="margin-top:4px">
+    <div class="thr">
+      <span class="tht">📋 Cumplimiento de Rotación por Género y Categoría</span>
+      <span class="tcnt" id="t4cnt"></span>
+    </div>
+    <div class="tscroll">
+      <table id="tbl-resumen4" style="min-width:520px">
+        <thead><tr>
+          <th style="text-align:left;width:38%">Género / Categoría</th>
+          <th style="text-align:center">Total Refs</th>
+          <th style="text-align:center">✅ Cumplen</th>
+          <th style="text-align:center">% Cumplen</th>
+          <th style="text-align:center">❌ No Cumplen</th>
+          <th style="text-align:center">% No Cumplen</th>
+        </tr></thead>
+        <tbody id="tb4"></tbody>
+      </table>
+    </div>
   </div>
 </div>
 
@@ -1216,126 +1228,109 @@ function rT3(){
 
 // ── TAB 4 ──
 function rT4(){
-  const data=fR();const bGC={},bCan={},bGen={},bCat={};
+  const data=fR();
+  const GEN_ORDER=['Femenino','Masculino','Unisex'];
+
+  // Aggregate usando Sets para refs únicas por género y género×categoría
+  const bGen={}, bCatMap={};
   data.forEach(r=>{
-    const k=r.genero+'|'+r.categoria;if(!bGC[k])bGC[k]={g:r.genero,c:r.categoria,refs:new Set(),cp:0,tot:0,venta:0,rS:0,rC:0};bGC[k].refs.add(r.referencia);bGC[k].tot++;if(r.cumple)bGC[k].cp++;bGC[k].venta+=r.venta;if(r.cumpl>0){bGC[k].rS+=r.cumpl;bGC[k].rC++;}
-    // enrich bCan and bGen with venta/ingreso/dias for cumplimiento agg
-    if(!bCan[r.canal])bCan[r.canal]={cp:0,tot:0,ven:0,ing:0,dias:[]};
-    bCan[r.canal].tot++;if(r.cumple)bCan[r.canal].cp++;
-    bCan[r.canal].ven+=r.venta; bCan[r.canal].ing+=r.ingreso;
-    if(r.dias>0) bCan[r.canal].dias.push(r.dias);
-    if(!bGen[r.genero])bGen[r.genero]={cp:0,tot:0,ven:0,ing:0,dias:[]};
-    bGen[r.genero].tot++;if(r.cumple)bGen[r.genero].cp++;
-    bGen[r.genero].ven+=r.venta; bGen[r.genero].ing+=r.ingreso;
-    if(r.dias>0) bGen[r.genero].dias.push(r.dias);
-    if(!bCat[r.categoria])bCat[r.categoria]={cp:0,tot:0};bCat[r.categoria].tot++;if(r.cumple)bCat[r.categoria].cp++;
+    const g=r.genero, cat=r.categoria;
+    if(!bGen[g]) bGen[g]={refs:new Set(),cumple:new Set(),noCumple:new Set()};
+    bGen[g].refs.add(r.referencia);
+    if(r.cumple) bGen[g].cumple.add(r.referencia); else bGen[g].noCumple.add(r.referencia);
+    const k=g+'||'+cat;
+    if(!bCatMap[k]) bCatMap[k]={g,cat,refs:new Set(),cumple:new Set(),noCumple:new Set()};
+    bCatMap[k].refs.add(r.referencia);
+    if(r.cumple) bCatMap[k].cumple.add(r.referencia); else bCatMap[k].noCumple.add(r.referencia);
   });
-  const tA=data.length,tC=data.filter(r=>r.cumple).length,tR=new Set(data.map(r=>r.referencia)).size,pC=tA>0?tC/tA:0;
+
+  // Totales globales (refs únicas)
+  const allRefs=new Set(data.map(r=>r.referencia));
+  const allCumple=new Set(data.filter(r=>r.cumple).map(r=>r.referencia));
+  const tA=allRefs.size, tC=allCumple.size, tNC=tA-tC, pC=tA>0?tC/tA:0;
+
+  // KPI cards
   document.getElementById('kpi4').innerHTML=[
-    {i:'📦',l:'Refs Evaluadas',v:fmtN(tR),s:'referencias únicas',kc:'var(--blue-bg)'},
-    {i:'✅',l:'Cumplen Rotación',v:fmtN(tC),s:'≥ 90% del ideal',kc:'var(--green-bg)',vc:'var(--green)'},
-    {i:'❌',l:'No Cumplen',v:fmtN(tA-tC),s:'< 90% del ideal',kc:'var(--red-bg)',vc:'var(--red)'},
-    {i:'📊',l:'% Cumplimiento',v:fmtP(pC),s:'del total evaluado',kc:pC>=0.9?'var(--green-bg)':pC>=0.7?'var(--yellow-bg)':'var(--red-bg)',vc:semClr(pC)},
+    {i:'📦',l:'Refs Evaluadas',v:fmtN(tA),s:'referencias únicas',kc:'var(--blue-bg)'},
+    {i:'✅',l:'Cumplen Rotación',v:fmtN(tC),s:`≥ 90% del ideal · ${tA>0?(tC/tA*100).toFixed(1):0}% del total`,kc:'var(--green-bg)',vc:'var(--green)'},
+    {i:'❌',l:'No Cumplen',v:fmtN(tNC),s:`< 90% del ideal · ${tA>0?(tNC/tA*100).toFixed(1):0}% del total`,kc:'var(--red-bg)',vc:'var(--red)'},
+    {i:'📊',l:'% Cumplimiento',v:(tA>0?(tC/tA*100).toFixed(1):0)+'%',s:'del total de refs evaluadas',kc:pC>=0.9?'var(--green-bg)':pC>=0.7?'var(--yellow-bg)':'var(--red-bg)',vc:semClr(pC)},
   ].map(k=>`<div class="kpi-card" style="--kc:${k.kc}"><div class="kpi-icon">${k.i}</div><div class="kpi-label">${k.l}</div><div class="kpi-val" style="${k.vc?'color:'+k.vc:''}">${k.v}</div><div class="kpi-sub">${k.s}</div></div>`).join('');
-  
-  // Helper: cumplimiento agg for a bucket with ven/ing/dias
-  const cumplBucket=b=>{
-    if(!b.ing) return 0;
-    const d=b.dias.length?b.dias.reduce((a,c)=>a+c,0)/b.dias.length:0;
-    return riM(d)>0?(b.ven/b.ing)/riM(d):0;
+
+  document.getElementById('t4cnt').textContent=`${tA} refs · ${GEN_ORDER.filter(g=>bGen[g]).length} géneros`;
+
+  // Helpers de píldoras de color
+  const pPill=(p,txt)=>{
+    const bg=p>=0.9?'var(--green-bg)':p>=0.7?'var(--yellow-bg)':'var(--red-bg)';
+    const cl=p>=0.9?'var(--green)':p>=0.7?'var(--yellow)':'var(--red)';
+    return `<span class="pill" style="background:${bg};color:${cl};font-size:12px;padding:3px 11px;font-weight:700">${txt}</span>`;
   };
+  const nPill=(p,txt)=>{
+    const bg=p<=0.1?'var(--green-bg)':p<=0.3?'var(--yellow-bg)':'var(--red-bg)';
+    const cl=p<=0.1?'var(--green)':p<=0.3?'var(--yellow)':'var(--red)';
+    return `<span class="pill" style="background:${bg};color:${cl};font-size:12px;padding:3px 11px;font-weight:700">${txt}</span>`;
+  };
+  const pct=(n,tot)=>tot>0?`${(n/tot*100).toFixed(0)}%`:'—';
 
-  // Canal chart — % refs que cumplen + rich tooltip
-  const ALL_CANALS=['TOTAL COMPAÑIA','TIENDAS','CADENAS','OUTLETS','ONLINE'];
-  const CANAL_SHORT={'TOTAL COMPAÑIA':'Total Cía','TIENDAS':'Tiendas','CADENAS':'Cadenas','OUTLETS':'Outlets','ONLINE':'Online'};
-  const canalData=ALL_CANALS.map(canal=>{
-    const cRefs=dedupR(ROTACION.filter(r=>r.canal===canal&&state.generos.has(r.genero)&&state.categorias.has(r.categoria)&&state.colecciones.has(r.coleccion)&&state.paquetes.has(r.paquete)));
-    const uAll=new Set(cRefs.map(r=>r.referencia)).size;
-    const uCumple=new Set(cRefs.filter(r=>r.cumple).map(r=>r.referencia)).size;
-    const ven=cRefs.reduce((s,r)=>s+r.venta,0);
-    const ing=cRefs.reduce((s,r)=>s+r.ingreso,0);
-    const diasArr=cRefs.filter(r=>r.dias>0).map(r=>r.dias);
-    const dias=diasArr.length?diasArr.reduce((a,c)=>a+c,0)/diasArr.length:0;
-    const rotR=ing>0?ven/ing:0;
-    const rotI=riM(dias);
-    const cumpl=rotI>0?rotR/rotI:0;
-    const pct=uAll>0?+(uCumple/uAll*100).toFixed(1):0;
-    return{label:CANAL_SHORT[canal],canal,pct,rotR,rotI,cumpl,ven,ing,dias,uCumple,uAll};
-  });
-  dCh('ch4b');
-  CHS['ch4b']=new Chart(document.getElementById('ch4b'),{
-    type:'bar',
-    data:{labels:canalData.map(c=>c.label),datasets:[{
-      label:'% Refs que cumplen rotación',
-      data:canalData.map(c=>c.pct),
-      backgroundColor:canalData.map(c=>c.pct>=90?'rgba(16,185,129,0.85)':c.pct>=70?'rgba(245,158,11,0.85)':'rgba(239,68,68,0.85)'),
-      borderRadius:8
-    }]},
-    options:{responsive:true,maintainAspectRatio:false,
-      plugins:{
-        legend:{display:false},
-        tooltip:{...TTP,callbacks:{
-          title:ctx=>`Canal: ${ctx[0].label}`,
-          label:ctx=>{
-            const d=canalData[ctx.dataIndex];
-            return[
-              `✅ ${d.uCumple} de ${d.uAll} refs cumplen (${d.pct}%)`,
-              `📊 Cumpl. Rotación: ${Math.round(d.cumpl*100)}%`,
-              `🔄 Rot. Real: ${fmtP(d.rotR)}  /  Ideal: ${fmtP(d.rotI)}`,
-              `📅 ${Math.round(d.dias)} días promedio en tienda`,
-              `📦 Vendidas: ${fmtN(d.ven)} und  ·  Inv: ${fmtN(d.ing)} und`,
-            ];
-          }
-        }}
-      },
-      scales:{
-        x:{ticks:{color:'#6b7280',font:{size:11}},grid:{color:'#f0f2f7'}},
-        y:{min:0,max:100,ticks:{color:'#6b7280',stepSize:10,callback:v=>v+'%'},grid:{color:'#f0f2f7'}}
-      }
-    }
+  let rows='';
+
+  // ── Fila TOTAL GENERAL ──
+  rows+=`<tr style="background:var(--surface2)">
+    <td style="padding:13px 18px;font-weight:800;font-size:14px;color:var(--text1)">🌐 Total General</td>
+    <td style="text-align:center;font-weight:800;font-size:14px">${tA}</td>
+    <td style="text-align:center;font-weight:700;color:var(--green);font-size:14px">${tC}</td>
+    <td style="text-align:center">${pPill(pC,pct(tC,tA))}</td>
+    <td style="text-align:center;font-weight:700;color:var(--red);font-size:14px">${tNC}</td>
+    <td style="text-align:center">${nPill(tA>0?tNC/tA:1,pct(tNC,tA))}</td>
+  </tr>`;
+
+  // ── Filas por Género (expandibles) → Categoría ──
+  GEN_ORDER.filter(g=>bGen[g]).forEach(g=>{
+    const b=bGen[g];
+    const tot=b.refs.size, cp=b.cumple.size, nc=b.noCumple.size;
+    const pG=tot>0?cp/tot:0;
+    const gid='t4g-'+g.replace(/\s/g,'_');
+    const catList=Object.values(bCatMap).filter(c=>c.g===g).sort((a,z)=>z.refs.size-a.refs.size);
+
+    rows+=`<tr class="t4-gen-row" data-gid="${gid}" style="cursor:pointer;border-top:2px solid var(--border)">
+      <td style="padding:11px 18px;font-weight:700;color:var(--text1);font-size:13px">
+        <span id="chv-${gid}" style="display:inline-block;margin-right:8px;font-size:10px;color:var(--text3)">▶</span>${g}
+        <span style="margin-left:8px;font-size:10px;color:var(--text3);font-weight:400">${catList.length} categorías — clic para ver detalle</span>
+      </td>
+      <td style="text-align:center;font-weight:700">${tot}</td>
+      <td style="text-align:center;font-weight:700;color:var(--green)">${cp}</td>
+      <td style="text-align:center">${pPill(pG,pct(cp,tot))}</td>
+      <td style="text-align:center;font-weight:700;color:var(--red)">${nc}</td>
+      <td style="text-align:center">${nPill(tot>0?nc/tot:1,pct(nc,tot))}</td>
+    </tr>`;
+
+    // Filas de Categoría (ocultas por defecto)
+    catList.forEach(c=>{
+      const ct=c.refs.size, cc=c.cumple.size, cn=c.noCumple.size;
+      const pCat=ct>0?cc/ct:0;
+      rows+=`<tr class="${gid} t4-cat-row" style="display:none;background:#fafbfc">
+        <td style="padding:9px 18px 9px 44px;color:var(--text2);font-size:13px">└ ${c.cat}</td>
+        <td style="text-align:center;color:var(--text2)">${ct}</td>
+        <td style="text-align:center;color:var(--green)">${cc}</td>
+        <td style="text-align:center">${pPill(pCat,pct(cc,ct))}</td>
+        <td style="text-align:center;color:var(--red)">${cn}</td>
+        <td style="text-align:center">${nPill(ct>0?cn/ct:1,pct(cn,ct))}</td>
+      </tr>`;
+    });
   });
 
-  // Género chart — % cumplimiento agg (not absolute counts) + rich tooltip
-  const GEN_ORDER_T4=['Femenino','Masculino','Unisex'];
-  const gens=GEN_ORDER_T4.filter(g=>bGen[g]);
-  const genPct=gens.map(g=>{const b=bGen[g];return b.tot>0?+(b.cp/b.tot*100).toFixed(1):0;});
-  dCh('ch4c');
-  CHS['ch4c']=new Chart(document.getElementById('ch4c'),{
-    type:'bar',
-    data:{labels:gens,datasets:[
-      {label:'✅ Cumplen',data:gens.map(g=>bGen[g].cp),backgroundColor:'rgba(16,185,129,0.85)',borderRadius:8},
-      {label:'❌ No Cumplen',data:gens.map(g=>bGen[g].tot-bGen[g].cp),backgroundColor:'rgba(239,68,68,0.8)',borderRadius:8}
-    ]},
-    options:{responsive:true,maintainAspectRatio:false,
-      plugins:{
-        legend:{labels:{color:'#6b7280',font:{size:11}}},
-        tooltip:{...TTP,callbacks:{
-          title:ctx=>`Género: ${ctx[0].label}`,
-          label:ctx=>{
-            const g=ctx.label; const b=bGen[g]; if(!b) return '';
-            const rotR=b.ing>0?b.ven/b.ing:0;
-            const dias=b.dias.length?b.dias.reduce((a,c)=>a+c,0)/b.dias.length:0;
-            const rotI=riM(dias); const cumpl=rotI>0?rotR/rotI:0;
-            const pct=b.tot>0?b.cp/b.tot*100:0;
-            return[
-              `✅ ${b.cp} cumplen  ·  ❌ ${b.tot-b.cp} no cumplen`,
-              `📊 ${pct.toFixed(1)}% de refs cumplen individualmente`,
-              `📈 Cumpl. Rotación: ${Math.round(cumpl*100)}%`,
-              `🔄 Rot. Real: ${fmtP(rotR)}  /  Ideal: ${fmtP(rotI)}`,
-              `📅 ${Math.round(dias)} días promedio en tienda`,
-              `📦 Vendidas: ${fmtN(b.ven)} und  ·  Inv: ${fmtN(b.ing)} und`,
-            ];
-          }
-        }}
-      },
-      scales:{
-        x:{ticks:{color:'#6b7280'},grid:{color:'#f0f2f7'}},
-        y:{ticks:{color:'#6b7280'},grid:{color:'#f0f2f7'}}
-      }
-    }
+  document.getElementById('tb4').innerHTML=rows;
+
+  // Listeners de toggle expandir/colapsar
+  document.querySelectorAll('.t4-gen-row').forEach(row=>{
+    row.addEventListener('click',()=>{
+      const gid=row.dataset.gid;
+      const chv=document.getElementById('chv-'+gid);
+      const open=chv.textContent.trim()==='▼';
+      document.querySelectorAll('.'+gid).forEach(r=>r.style.display=open?'none':'table-row');
+      chv.textContent=open?'▶':'▼';
+    });
   });
-  const cats=Object.keys(bCat).sort(),catP=cats.map(c=>+(bCat[c].cp/bCat[c].tot*100).toFixed(1));
-  barCh('ch4d',cats,[{label:'% Cumplen',data:catP,backgroundColor:catP.map(v=>v>=90?'rgba(16,185,129,0.85)':v>=70?'rgba(245,158,11,0.85)':'rgba(239,68,68,0.85)'),borderRadius:6}],{sy:{ticks:{callback:v=>v+'%'},max:100},tt:{callbacks:{label:c=>c.parsed.y.toFixed(1)+'%'}}});
 }
 
 // ── TAB 5: JEANS ──
