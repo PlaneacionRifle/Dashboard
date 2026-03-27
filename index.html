@@ -1358,6 +1358,7 @@ function rT5(){
   // Global KPIs
   const totIng=dataRef.reduce((s,r)=>s+r.ingreso,0);
   const totVen=dataRef.reduce((s,r)=>s+r.venta,0);
+  const totInv=dataRef.reduce((s,r)=>s+(r.inventario||0),0);
   const diasArr=dataRef.filter(r=>r.dias>0).map(r=>r.dias);
   const diasProm=diasArr.length?diasArr.reduce((a,b)=>a+b,0)/diasArr.length:0;
   const rotR=totIng>0?totVen/totIng:0;
@@ -1375,7 +1376,7 @@ function rT5(){
     {i:'🔄',l:'Rotación Real',v:fmtP(rotR),s:`Ideal: ${fmtP(rotI)}`,kc:'var(--blue-bg)'},
     {i:'📅',l:'Días Promedio',v:Math.round(diasProm)+'d',s:`${Math.round(diasProm/7)} semanas en tienda`,kc:'var(--blue-bg)'},
     {i:'🛍️',l:'Venta Total',v:fmtN(totVen),s:'unidades vendidas',kc:'var(--blue-bg)'},
-    {i:'📥',l:'Compra',v:fmtN(totIng),s:'unidades ingresadas (compra)',kc:'var(--blue-bg)'},
+    {i:'🏪',l:'Inventario Actual',v:fmtN(totInv),s:'unidades en tienda hoy',kc:'var(--blue-bg)'},
   ].map(k=>`<div class="kpi-card" style="--kc:${k.kc}"><div class="kpi-icon">${k.i}</div><div class="kpi-label">${k.l}</div><div class="kpi-val" style="${k.vc?'color:'+k.vc:''}">${k.v}</div><div class="kpi-sub">${k.s}</div></div>`).join('');
 
   // Aggregate by FIT
