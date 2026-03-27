@@ -917,7 +917,11 @@ function rT2(){
     if(!recs.length) return '';
     const totIng=recs.reduce((s,r)=>s+r.ingreso,0);
     const totVen=recs.reduce((s,r)=>s+r.venta,0);
-    const diasArr=recs.filter(r=>r.dias_avg>0).map(r=>r.dias_avg);
+    // Usar dias_col (nivel colección) si está disponible (ROTACION_SUB),
+    // si no usar dias_avg (ROTACION_TOT que ya es nivel colección).
+    // Esto garantiza que el Total use el mismo benchmark rot_ideal que el KPI.
+    const diasArr=recs.filter(r=>(r.dias_col||0)>0||(r.dias_avg||0)>0)
+                      .map(r=>(r.dias_col||0)>0?r.dias_col:r.dias_avg);
     const diasAvg=diasArr.length?diasArr.reduce((a,b)=>a+b,0)/diasArr.length:0;
     const rotR=totIng>0?totVen/totIng:0;
     const rotI=riM(diasAvg);
