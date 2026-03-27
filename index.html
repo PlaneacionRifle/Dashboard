@@ -1375,7 +1375,7 @@ function rT5(){
     {i:'🔄',l:'Rotación Real',v:fmtP(rotR),s:`Ideal: ${fmtP(rotI)}`,kc:'var(--blue-bg)'},
     {i:'📅',l:'Días Promedio',v:Math.round(diasProm)+'d',s:`${Math.round(diasProm/7)} semanas en tienda`,kc:'var(--blue-bg)'},
     {i:'🛍️',l:'Venta Total',v:fmtN(totVen),s:'unidades vendidas',kc:'var(--blue-bg)'},
-    {i:'📥',l:'Inventario',v:fmtN(totIng),s:'unidades ingresadas',kc:'var(--blue-bg)'},
+    {i:'📥',l:'Compra',v:fmtN(totIng),s:'unidades ingresadas (compra)',kc:'var(--blue-bg)'},
   ].map(k=>`<div class="kpi-card" style="--kc:${k.kc}"><div class="kpi-icon">${k.i}</div><div class="kpi-label">${k.l}</div><div class="kpi-val" style="${k.vc?'color:'+k.vc:''}">${k.v}</div><div class="kpi-sub">${k.s}</div></div>`).join('');
 
   // Aggregate by FIT
