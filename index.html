@@ -902,9 +902,7 @@ function rT2(){
       <td>${pillC(cm)}</td>
       <td>${fmtP(r.rot_real)} / ${fmtP(r.rot_ideal)}</td>
       <td>${Math.round(r.dias_avg)}d · ${r.semanas}sem</td>
-      <td>${new Set(refRows.map(rf=>rf.referencia)).size}</td>
-      <td style="color:var(--green)">${new Set(refRows.filter(rf=>rf.cumple).map(rf=>rf.referencia)).size}</td>
-      <td style="color:var(--red)">${new Set(refRows.filter(rf=>!rf.cumple).map(rf=>rf.referencia)).size}</td>
+      ${(()=>{const tot=new Set(refRows.map(rf=>rf.referencia)).size;const cp=new Set(refRows.filter(rf=>rf.cumple).map(rf=>rf.referencia)).size;const nc=tot-cp;return`<td>${tot}</td><td style="color:var(--green)">${cp} <span style="font-size:10px;color:var(--text2)">(${tot>0?(cp/tot*100).toFixed(0):0}%)</span></td><td style="color:var(--red)">${nc} <span style="font-size:10px;color:var(--text2)">(${tot>0?(nc/tot*100).toFixed(0):0}%)</span></td>`;})()}
     </tr>`;
     // Detail expand row — full column set
     const detailRows=refRows.sort((a,b)=>b.cumpl-a.cumpl).map(rf=>{
