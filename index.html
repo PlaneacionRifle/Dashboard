@@ -924,7 +924,7 @@ function rT2(){
         <td style="max-width:220px;white-space:normal">${refCell}</td>
         <td>${fitTxt}</td>
         <td>${atribTxt}</td>
-        <td style="color:var(--text2);font-size:11px">${rf.pvp>0?'$'+Math.round(rf.pvp/1000)+'K':'—'}</td>
+        <td style="color:var(--text2);font-size:11px">${rf.pvp>0?'$'+(rf.pvp/1000).toFixed(1)+'K':'—'}</td>
         <td>${rf.dias>0?Math.round(rf.dias)+'d':'—'}</td>
         <td style="color:${semClr(rf.rot_real/Math.max(rf.rot_ideal,0.01))}">${fmtP(rf.rot_real)}</td>
         <td style="color:var(--text2)">${fmtP(rf.rot_ideal)}</td>
@@ -1473,7 +1473,7 @@ function rT5(){
       return`<tr>
         <td style="max-width:220px;white-space:normal">${refCell}</td>
         <td>${fitTxt}</td><td>${atribTxt}</td>
-        <td style="color:var(--text2);font-size:11px">${rf.pvp>0?'$'+Math.round(rf.pvp/1000)+'K':'—'}</td>
+        <td style="color:var(--text2);font-size:11px">${rf.pvp>0?'$'+(rf.pvp/1000).toFixed(1)+'K':'—'}</td>
         <td>${rf.dias>0?Math.round(rf.dias)+'d':'—'}</td>
         <td style="color:${semClr(rf.rot_real/Math.max(rf.rot_ideal,0.01))}">${fmtP(rf.rot_real)}</td>
         <td style="color:var(--text2)">${fmtP(rf.rot_ideal)}</td>
@@ -1583,7 +1583,7 @@ function rT6(){
       <td>${r.categoria}</td>
       <td>${fitTxt}</td>
       <td>${atribTxt}</td>
-      <td style="color:var(--text2);font-size:11px">${r.pvp>0?'$'+Math.round(r.pvp/1000)+'K':'—'}</td>
+      <td style="color:var(--text2);font-size:11px">${r.pvp>0?'$'+(r.pvp/1000).toFixed(1)+'K':'—'}</td>
       <td>${Math.round(r.dias)}d</td>
       <td style="color:${semClr(r.rot_real/Math.max(r.rot_ideal,0.01))}">${fmtP(r.rot_real)}</td>
       <td style="color:var(--text2)">${fmtP(r.rot_ideal)}</td>
