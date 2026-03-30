@@ -59,16 +59,15 @@ body{background:var(--bg);color:var(--text);font-family:'Inter',sans-serif;font-
 .sem-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:14px;margin-bottom:24px;}
 .sem-card{background:var(--surface);border-radius:var(--radius);padding:18px;box-shadow:var(--shadow);border:1.5px solid var(--border);display:flex;flex-direction:column;align-items:center;gap:9px;transition:transform 0.2s,box-shadow 0.2s;position:relative;}
 .sem-card:hover{transform:translateY(-2px);box-shadow:var(--shadow-lg);}
-.sem-tooltip{display:none;position:absolute;bottom:calc(100% + 10px);left:50%;transform:translateX(-50%);background:var(--surface);border:1.5px solid var(--border);border-radius:12px;padding:14px 16px;box-shadow:0 8px 32px rgba(0,0,0,0.18);z-index:200;min-width:220px;pointer-events:none;white-space:nowrap;}
+.sem-tooltip{display:none;position:absolute;top:calc(100% + 8px);left:50%;transform:translateX(-50%);background:var(--surface);border:1.5px solid var(--border);border-radius:10px;padding:10px 12px;box-shadow:0 6px 20px rgba(0,0,0,0.15);z-index:200;min-width:170px;pointer-events:none;white-space:nowrap;}
 .sem-card:hover .sem-tooltip{display:block;}
-.sem-tooltip::after{content:'';position:absolute;top:100%;left:50%;transform:translateX(-50%);border:7px solid transparent;border-top-color:var(--border);}
-.sem-tooltip::before{content:'';position:absolute;top:calc(100% - 1px);left:50%;transform:translateX(-50%);border:7px solid transparent;border-top-color:var(--surface);z-index:1;}
-.sem-tt-title{font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.8px;margin-bottom:8px;padding-bottom:6px;border-bottom:1px solid var(--border);}
-.sem-tt-row{display:flex;justify-content:space-between;align-items:center;gap:16px;margin-bottom:5px;font-size:11px;}
+.sem-tooltip::before{content:'';position:absolute;bottom:100%;left:50%;transform:translateX(-50%);border:6px solid transparent;border-bottom-color:var(--border);}
+.sem-tooltip::after{content:'';position:absolute;bottom:calc(100% - 1px);left:50%;transform:translateX(-50%);border:6px solid transparent;border-bottom-color:var(--surface);z-index:1;}
+.sem-tt-row{display:flex;justify-content:space-between;align-items:center;gap:14px;margin-bottom:4px;font-size:11px;}
 .sem-tt-row:last-child{margin-bottom:0;}
 .sem-tt-lbl{color:var(--text3);font-weight:500;}
 .sem-tt-val{font-weight:700;font-size:12px;}
-.sem-tt-sep{height:1px;background:var(--border);margin:7px 0;}
+.sem-tt-sep{height:1px;background:var(--border);margin:5px 0;}
 .sem-tt-pos{color:var(--green);}
 .sem-tt-neg{color:var(--red);}
 .sem-tt-neu{color:var(--yellow);}
@@ -646,21 +645,11 @@ function rT1(){
     const fmtCre = v => v==null ? '—' : `<span class="${v>=0?'sem-tt-pos':'sem-tt-neg'}">${v>=0?'+':''}${(v*100).toFixed(1)}%</span>`;
     const fmtCumpl = v => v==null ? '—' : `<span class="${v>=1?'sem-tt-pos':v>=0.85?'sem-tt-neu':'sem-tt-neg'}">${Math.round(v*100)}%</span>`;
     return `<div class="sem-tooltip">
-      <div class="sem-tt-title">${label}</div>
       <div class="sem-tt-row"><span class="sem-tt-lbl">Cumpl. Ppto $$</span><span class="sem-tt-val">${fmtCumpl(cumUsd)}</span></div>
-      <div class="sem-tt-row"><span class="sem-tt-lbl" style="padding-left:10px;font-size:10px">Proyección</span><span class="sem-tt-val" style="font-size:10px;color:var(--text2)">${fmtM(r.pr)}</span></div>
-      <div class="sem-tt-row"><span class="sem-tt-lbl" style="padding-left:10px;font-size:10px">Presupuesto</span><span class="sem-tt-val" style="font-size:10px;color:var(--text2)">${fmtM(r.pt)}</span></div>
-      <div class="sem-tt-row"><span class="sem-tt-lbl" style="padding-left:10px;font-size:10px">Venta Real</span><span class="sem-tt-val" style="font-size:10px;color:var(--text2)">${fmtM(r.vtaUsd)}</span></div>
-      <div class="sem-tt-sep"></div>
       <div class="sem-tt-row"><span class="sem-tt-lbl">Cumpl. Ppto Und</span><span class="sem-tt-val">${fmtCumpl(cumUnd)}</span></div>
-      <div class="sem-tt-row"><span class="sem-tt-lbl" style="padding-left:10px;font-size:10px">Proyección</span><span class="sem-tt-val" style="font-size:10px;color:var(--text2)">${fmtN(r.prU)} und</span></div>
-      <div class="sem-tt-row"><span class="sem-tt-lbl" style="padding-left:10px;font-size:10px">Presupuesto</span><span class="sem-tt-val" style="font-size:10px;color:var(--text2)">${fmtN(r.ptU)} und</span></div>
-      <div class="sem-tt-row"><span class="sem-tt-lbl" style="padding-left:10px;font-size:10px">Venta Real</span><span class="sem-tt-val" style="font-size:10px;color:var(--text2)">${fmtN(r.vtaUnd)} und</span></div>
       <div class="sem-tt-sep"></div>
       <div class="sem-tt-row"><span class="sem-tt-lbl">Crecimiento $$</span><span class="sem-tt-val">${fmtCre(creUsd)}</span></div>
-      <div class="sem-tt-row"><span class="sem-tt-lbl" style="padding-left:10px;font-size:10px">Proy. vs Año Ant.</span><span class="sem-tt-val" style="font-size:10px;color:var(--text2)">${r.vtaUsdAnt>0?fmtM(r.vtaUsdAnt):'—'}</span></div>
       <div class="sem-tt-row"><span class="sem-tt-lbl">Crecimiento Und</span><span class="sem-tt-val">${fmtCre(creUnd)}</span></div>
-      <div class="sem-tt-row"><span class="sem-tt-lbl" style="padding-left:10px;font-size:10px">Proy. vs Año Ant.</span><span class="sem-tt-val" style="font-size:10px;color:var(--text2)">${r.vtaUndAnt>0?fmtN(r.vtaUndAnt)+' und':'—'}</span></div>
     </div>`;
   };
 
