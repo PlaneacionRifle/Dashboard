@@ -664,29 +664,43 @@ function rT1(){
       </div>`;
     }).join('');
 
-    // Subtotal del género
+    // Subtotal inline en el header del género
     const tot={pr:0,pt:0,prU:0,ptU:0,vtaUsd:0,vtaUnd:0,vtaUsdAnt:0,vtaUndAnt:0};
     catsForGen.forEach(c=>{const r=bCG[genero+'|'+c];Object.keys(tot).forEach(k=>{tot[k]+=r[k]||0;});});
     const pTot=tot.pt>0?tot.pr/tot.pt:null;
-    const clsTot=semCls(pTot);
+    const pTotUnd=tot.ptU>0?tot.prU/tot.ptU:null;
+    const creTotUsd=tot.vtaUsdAnt>0?(tot.pr-tot.vtaUsdAnt)/tot.vtaUsdAnt:null;
+    const creTotUnd=tot.vtaUndAnt>0?(tot.prU-tot.vtaUndAnt)/tot.vtaUndAnt:null;
     const pvTot=pTot!=null?Math.min(Math.round(pTot*100),999):0;
-    const bwTot=pTot!=null?Math.min(pTot*100,100):0;
-    const bcTot=pTot>=1?'var(--green)':pTot>=0.85?'var(--yellow)':'var(--red)';
-    const subtotalCard=`<div class="sem-card sem-card-subtotal" style="border-top:3px solid ${GENERO_COLOR[genero]}" ${buildTooltip(tot)}>
-      <div class="sem-icon-wrap sem-${clsTot}">${semIco(pTot)}</div>
-      <div class="sem-title" style="font-weight:800;font-size:12px">📊 Subtotal ${genero}</div>
-      <div class="sem-pct ${clsTot}">${pvTot}%</div>
-      <div class="sem-bar"><div class="sem-bar-fill" style="width:${bwTot}%;background:${bcTot}"></div></div>
-      <div class="sem-sub"><span style="color:var(--text3);font-size:9px">Proy:</span> ${fmtM(tot.pr)} <span style="color:var(--text3);font-size:9px">· Ppto:</span> ${fmtM(tot.pt)}</div>
-    </div>`;
+    const pvTotUnd=pTotUnd!=null?Math.min(Math.round(pTotUnd*100),999):0;
+    const clsTot=semCls(pTot);
+    const clsTotUnd=semCls(pTotUnd);
+    const fmtCreInl=v=>v==null?'—':`${v>=0?'+':''}${(v*100).toFixed(1)}%`;
+    const creUsdClr=creTotUsd==null?'var(--text3)':creTotUsd>=0?'var(--green)':'var(--red)';
+    const creUndClr=creTotUnd==null?'var(--text3)':creTotUnd>=0?'var(--green)':'var(--red)';
+    const clrTot=pTot>=1?'var(--green)':pTot>=0.85?'var(--yellow)':'var(--red)';
+    const clrTotUnd=pTotUnd>=1?'var(--green)':pTotUnd>=0.85?'var(--yellow)':'var(--red)';
 
     return `
       <div style="margin-bottom:20px">
-        <div style="font-size:12px;font-weight:700;color:${GENERO_COLOR[genero]};letter-spacing:1px;text-transform:uppercase;margin-bottom:10px;display:flex;align-items:center;gap:6px">
-          <span style="display:inline-block;width:3px;height:16px;background:${GENERO_COLOR[genero]};border-radius:2px"></span>
-          ${GENERO_ICON[genero]} ${genero}
+        <div style="font-size:12px;font-weight:700;color:${GENERO_COLOR[genero]};letter-spacing:1px;text-transform:uppercase;margin-bottom:10px;display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+          <span style="display:inline-block;width:3px;height:16px;background:${GENERO_COLOR[genero]};border-radius:2px;flex-shrink:0"></span>
+          <span>${GENERO_ICON[genero]} ${genero}</span>
+          <span style="display:flex;align-items:center;gap:6px;margin-left:4px;background:var(--hover);border-radius:20px;padding:3px 10px;font-size:10px;letter-spacing:0;text-transform:none;font-weight:600;color:var(--text2)">
+            <span style="color:var(--text3);font-weight:400">Cumpl $$</span>
+            <span style="color:${clrTot};font-weight:700">${pvTot}%</span>
+            <span style="color:var(--border)">·</span>
+            <span style="color:var(--text3);font-weight:400">Und</span>
+            <span style="color:${clrTotUnd};font-weight:700">${pvTotUnd}%</span>
+            <span style="color:var(--border)">·</span>
+            <span style="color:var(--text3);font-weight:400">Crec $$</span>
+            <span style="color:${creUsdClr};font-weight:700">${fmtCreInl(creTotUsd)}</span>
+            <span style="color:var(--border)">·</span>
+            <span style="color:var(--text3);font-weight:400">Und</span>
+            <span style="color:${creUndClr};font-weight:700">${fmtCreInl(creTotUnd)}</span>
+          </span>
         </div>
-        <div class="sem-grid" style="margin-bottom:0">${cards}${subtotalCard}</div>
+        <div class="sem-grid" style="margin-bottom:0">${cards}</div>
       </div>`;
   };
 
