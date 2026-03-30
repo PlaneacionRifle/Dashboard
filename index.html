@@ -59,10 +59,7 @@ body{background:var(--bg);color:var(--text);font-family:'Inter',sans-serif;font-
 .sem-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:14px;margin-bottom:24px;}
 .sem-card{background:var(--surface);border-radius:var(--radius);padding:18px;box-shadow:var(--shadow);border:1.5px solid var(--border);display:flex;flex-direction:column;align-items:center;gap:9px;transition:transform 0.2s,box-shadow 0.2s;position:relative;}
 .sem-card:hover{transform:translateY(-2px);box-shadow:var(--shadow-lg);}
-.sem-tooltip{display:none;position:absolute;top:calc(100% + 8px);left:50%;transform:translateX(-50%);background:var(--surface);border:1.5px solid var(--border);border-radius:10px;padding:10px 12px;box-shadow:0 6px 20px rgba(0,0,0,0.15);z-index:200;min-width:170px;pointer-events:none;white-space:nowrap;}
-.sem-card:hover .sem-tooltip{display:block;}
-.sem-tooltip::before{content:'';position:absolute;bottom:100%;left:50%;transform:translateX(-50%);border:6px solid transparent;border-bottom-color:var(--border);}
-.sem-tooltip::after{content:'';position:absolute;bottom:calc(100% - 1px);left:50%;transform:translateX(-50%);border:6px solid transparent;border-bottom-color:var(--surface);z-index:1;}
+#sem-tt{display:none;position:fixed;background:var(--surface);border:1.5px solid var(--border);border-radius:10px;padding:10px 13px;box-shadow:0 6px 24px rgba(0,0,0,0.18);z-index:99999;min-width:165px;pointer-events:none;white-space:nowrap;}
 .sem-tt-row{display:flex;justify-content:space-between;align-items:center;gap:14px;margin-bottom:4px;font-size:11px;}
 .sem-tt-row:last-child{margin-bottom:0;}
 .sem-tt-lbl{color:var(--text3);font-weight:500;}
@@ -637,20 +634,14 @@ function rT1(){
   const GENERO_ICON={Masculino:'👔',Femenino:'👗'};
 
   // Helper tooltip para una tarjeta (categoría o subtotal)
-  const buildTooltip = (r, label) => {
+  // buildTooltip: devuelve atributos data-* para el sem-card (el tooltip flotante vive en body)
+  const buildTooltip = (r) => {
     const cumUsd = r.pt>0 ? r.pr/r.pt : null;
     const cumUnd = r.ptU>0 ? r.prU/r.ptU : null;
     const creUsd = r.vtaUsdAnt>0 ? (r.pr-r.vtaUsdAnt)/r.vtaUsdAnt : null;
     const creUnd = r.vtaUndAnt>0 ? (r.prU-r.vtaUndAnt)/r.vtaUndAnt : null;
-    const fmtCre = v => v==null ? '—' : `<span class="${v>=0?'sem-tt-pos':'sem-tt-neg'}">${v>=0?'+':''}${(v*100).toFixed(1)}%</span>`;
-    const fmtCumpl = v => v==null ? '—' : `<span class="${v>=1?'sem-tt-pos':v>=0.85?'sem-tt-neu':'sem-tt-neg'}">${Math.round(v*100)}%</span>`;
-    return `<div class="sem-tooltip">
-      <div class="sem-tt-row"><span class="sem-tt-lbl">Cumpl. Ppto $$</span><span class="sem-tt-val">${fmtCumpl(cumUsd)}</span></div>
-      <div class="sem-tt-row"><span class="sem-tt-lbl">Cumpl. Ppto Und</span><span class="sem-tt-val">${fmtCumpl(cumUnd)}</span></div>
-      <div class="sem-tt-sep"></div>
-      <div class="sem-tt-row"><span class="sem-tt-lbl">Crecimiento $$</span><span class="sem-tt-val">${fmtCre(creUsd)}</span></div>
-      <div class="sem-tt-row"><span class="sem-tt-lbl">Crecimiento Und</span><span class="sem-tt-val">${fmtCre(creUnd)}</span></div>
-    </div>`;
+    const enc = v => v==null ? 'null' : String(v);
+    return `data-cu="${enc(cumUsd)}" data-cn="${enc(cumUnd)}" data-gu="${enc(creUsd)}" data-gn="${enc(creUnd)}"`;
   };
 
   const buildGeneroBlock = (genero) => {
@@ -664,8 +655,7 @@ function rT1(){
       const pv=p!=null?Math.min(Math.round(p*100),999):0;
       const bw=p!=null?Math.min(p*100,100):0;
       const bc=p>=1?'var(--green)':p>=0.85?'var(--yellow)':'var(--red)';
-      return `<div class="sem-card" style="border-top:3px solid ${GENERO_COLOR[genero]}">
-        ${buildTooltip(r, CATICONS[c]||'🏷️'+' '+c)}
+      return `<div class="sem-card" style="border-top:3px solid ${GENERO_COLOR[genero]}" ${buildTooltip(r)}>
         <div class="sem-icon-wrap sem-${cls}">${semIco(p)}</div>
         <div class="sem-title">${CATICONS[c]||'🏷️'} ${c}</div>
         <div class="sem-pct ${cls}">${pv}%</div>
@@ -682,8 +672,7 @@ function rT1(){
     const pvTot=pTot!=null?Math.min(Math.round(pTot*100),999):0;
     const bwTot=pTot!=null?Math.min(pTot*100,100):0;
     const bcTot=pTot>=1?'var(--green)':pTot>=0.85?'var(--yellow)':'var(--red)';
-    const subtotalCard=`<div class="sem-card sem-card-subtotal" style="border-top:3px solid ${GENERO_COLOR[genero]}">
-      ${buildTooltip(tot,'📊 Subtotal '+genero)}
+    const subtotalCard=`<div class="sem-card sem-card-subtotal" style="border-top:3px solid ${GENERO_COLOR[genero]}" ${buildTooltip(tot)}>
       <div class="sem-icon-wrap sem-${clsTot}">${semIco(pTot)}</div>
       <div class="sem-title" style="font-weight:800;font-size:12px">📊 Subtotal ${genero}</div>
       <div class="sem-pct ${clsTot}">${pvTot}%</div>
@@ -2000,6 +1989,58 @@ window.addEventListener('load',()=>{
   document.getElementById('loading').style.display='none';
   document.getElementById('app').style.display='block';
 });
+</script>
+<div id="sem-tt"></div>
+<script>
+(function(){
+  const tt = document.getElementById('sem-tt');
+  const fmtPct = v => v===null||v==='null' ? '—' : (() => {
+    const n = parseFloat(v);
+    const cls = n>=1 ? 'sem-tt-pos' : n>=0.85 ? 'sem-tt-neu' : 'sem-tt-neg';
+    return `<span class="${cls}">${Math.round(n*100)}%</span>`;
+  })();
+  const fmtCre = v => v===null||v==='null' ? '—' : (() => {
+    const n = parseFloat(v);
+    const cls = n>=0 ? 'sem-tt-pos' : 'sem-tt-neg';
+    return `<span class="${cls}">${n>=0?'+':''}${(n*100).toFixed(1)}%</span>`;
+  })();
+
+  function buildHTML(el) {
+    const cu=el.dataset.cu, cn=el.dataset.cn, gu=el.dataset.gu, gn=el.dataset.gn;
+    return `<div class="sem-tt-row"><span class="sem-tt-lbl">Cumpl. Ppto $$</span><span class="sem-tt-val">${fmtPct(cu)}</span></div>`+
+           `<div class="sem-tt-row"><span class="sem-tt-lbl">Cumpl. Ppto Und</span><span class="sem-tt-val">${fmtPct(cn)}</span></div>`+
+           `<div class="sem-tt-sep"></div>`+
+           `<div class="sem-tt-row"><span class="sem-tt-lbl">Crecimiento $$</span><span class="sem-tt-val">${fmtCre(gu)}</span></div>`+
+           `<div class="sem-tt-row"><span class="sem-tt-lbl">Crecimiento Und</span><span class="sem-tt-val">${fmtCre(gn)}</span></div>`;
+  }
+
+  function place(e) {
+    const pad = 14, tw = tt.offsetWidth, th = tt.offsetHeight;
+    const vw = window.innerWidth, vh = window.innerHeight;
+    let x = e.clientX + pad;
+    let y = e.clientY + pad;
+    if (x + tw > vw - 8) x = e.clientX - tw - pad;
+    if (y + th > vh - 8) y = e.clientY - th - pad;
+    tt.style.left = x + 'px';
+    tt.style.top  = y + 'px';
+  }
+
+  document.addEventListener('mouseover', function(e) {
+    const card = e.target.closest('.sem-card[data-cu]');
+    if (!card) return;
+    tt.innerHTML = buildHTML(card);
+    tt.style.display = 'block';
+    place(e);
+  });
+  document.addEventListener('mousemove', function(e) {
+    if (tt.style.display === 'block') place(e);
+  });
+  document.addEventListener('mouseout', function(e) {
+    const card = e.target.closest('.sem-card[data-cu]');
+    if (!card) return;
+    if (!card.contains(e.relatedTarget)) tt.style.display = 'none';
+  });
+})();
 </script>
 </body>
 </html>
