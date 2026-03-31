@@ -2080,32 +2080,33 @@ window.addEventListener('load',()=>{
     tip.style.left = x + 'px';
     tip.style.top  = y + 'px';
   }
+  // Usar setProperty con 'important' para ganar sobre cualquier !important del CSS
+  function showTip(tip){ tip.style.setProperty('display','block','important'); }
+  function hideTip(tip){ tip.style.setProperty('display','none','important'); }
 
   document.addEventListener('touchend', function(e){
     const wrap = e.target.closest('.ref-foto-wrap');
 
     // Toque fuera → cerrar
     if(!wrap){
-      if(currentTip){ currentTip.style.display='none'; currentTip=null; }
+      if(currentTip){ hideTip(currentTip); currentTip=null; }
       return;
     }
 
     const tip = wrap.querySelector('.ref-foto-tooltip');
     if(!tip) return;
 
-    const isOpen = (tip.style.display === 'block');
+    const isOpen = tip.style.getPropertyValue('display') === 'block';
 
     // Cerrar el anterior si es diferente
-    if(currentTip && currentTip !== tip){
-      currentTip.style.display = 'none';
-    }
+    if(currentTip && currentTip !== tip){ hideTip(currentTip); }
 
     if(isOpen){
-      tip.style.display = 'none';
+      hideTip(tip);
       currentTip = null;
     } else {
       placeTip(tip, wrap);
-      tip.style.display = 'block';
+      showTip(tip);
       currentTip = tip;
     }
     e.preventDefault();
