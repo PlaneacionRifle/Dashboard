@@ -255,7 +255,7 @@ body{overflow-x:hidden;}
 .expand-inner th{padding:5px 10px;text-align:left;font-size:10px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:0.6px;border-bottom:1px solid var(--border);white-space:nowrap;}
 .expand-inner td{padding:5px 10px;border-top:1px solid var(--border);color:var(--text2);font-size:12px;}
 .expand-inner tr:hover td{background:var(--surface);}
-.ref-foto-wrap{position:relative;display:inline-block;}
+.ref-foto-wrap{position:relative;display:inline-block;white-space:nowrap;max-width:100%;overflow:hidden;text-overflow:ellipsis;vertical-align:middle;}
 .ref-foto-tooltip{display:none;position:fixed;z-index:9999;background:#fff;border:1px solid var(--border);border-radius:10px;padding:6px;box-shadow:0 8px 24px rgba(0,0,0,0.18);pointer-events:none;}
 .ref-foto-tooltip img{width:180px;height:220px;object-fit:cover;border-radius:6px;display:block;}
 .ref-foto-tooltip .foto-lbl{font-size:11px;color:var(--text2);text-align:center;margin-top:5px;max-width:180px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
@@ -966,16 +966,17 @@ function rT2(){
       const fitTxt=(rf.fit&&rf.fit!=='nan'&&rf.fit!=='None')?rf.fit:'—';
       const atribTxt=(rf.atributo&&rf.atributo!=='nan'&&rf.atributo!=='None')?rf.atributo:'—';
       const fotoUrl=rf.foto_url||'';
+      const _sr=rf.referencia.split(' ');const shortRef=(_sr.length>2?_sr[0]+' '+_sr[1]:rf.referencia);
       const refCell=fotoUrl?
         `<div class="ref-foto-wrap">
-          ${rf.referencia}
+          ${shortRef}
           <div class="ref-foto-tooltip" style="width:192px">
             <img src="${fotoUrl}" alt="${rf.referencia}" onerror="this.parentElement.innerHTML='<div style=\\'width:180px;height:180px;display:flex;align-items:center;justify-content:center;color:#999;font-size:11px;text-align:center\\'>Sin foto<br>disponible</div>'">
             <div class="foto-lbl">${rf.referencia}</div>
           </div>
-        </div>` : rf.referencia;
+        </div>` : shortRef;
       return `<tr>
-        <td style="max-width:220px;white-space:normal">${refCell}</td>
+        <td style="max-width:200px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${refCell}</td>
         <td>${fitTxt}</td>
         <td>${atribTxt}</td>
         <td style="color:var(--text2);font-size:11px">${rf.pvp>0?'$'+(rf.pvp/1000).toFixed(1)+'K':'—'}</td>
@@ -1517,15 +1518,16 @@ function rT5(){
       const fitTxt=(rf.fit&&rf.fit!=='nan'&&rf.fit!=='None')?rf.fit:'—';
       const atribTxt=(rf.atributo&&rf.atributo!=='nan'&&rf.atributo!=='None')?rf.atributo:'—';
       const fotoUrl=rf.foto_url||'';
+      const _sr2=rf.referencia.split(' ');const shortRef2=(_sr2.length>2?_sr2[0]+' '+_sr2[1]:rf.referencia);
       const refCell=fotoUrl?
-        `<div class="ref-foto-wrap">${rf.referencia}
+        `<div class="ref-foto-wrap">${shortRef2}
           <div class="ref-foto-tooltip" style="width:192px">
             <img src="${fotoUrl}" alt="${rf.referencia}" onerror="this.parentElement.innerHTML='<div style=\\'width:180px;height:180px;display:flex;align-items:center;justify-content:center;color:#999;font-size:11px;text-align:center\\'>Sin foto<br>disponible</div>'">
             <div class="foto-lbl">${rf.referencia}</div>
           </div>
-        </div>`:rf.referencia;
+        </div>`:shortRef2;
       return`<tr>
-        <td style="max-width:220px;white-space:normal">${refCell}</td>
+        <td style="max-width:200px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${refCell}</td>
         <td>${fitTxt}</td><td>${atribTxt}</td>
         <td style="color:var(--text2);font-size:11px">${rf.pvp>0?'$'+(rf.pvp/1000).toFixed(1)+'K':'—'}</td>
         <td>${rf.dias>0?Math.round(rf.dias)+'d':'—'}</td>
@@ -1622,13 +1624,14 @@ function rT6(){
     const fitTxt=(r.fit&&r.fit!=='nan'&&r.fit!=='None')?r.fit:'—';
     const atribTxt=(r.atributo&&r.atributo!=='nan'&&r.atributo!=='None')?r.atributo:'—';
     const fotoUrl=r.foto_url||'';
+    const _sr3=r.referencia.split(' ');const shortRef3=(_sr3.length>2?_sr3[0]+' '+_sr3[1]:r.referencia);
     const refCell=fotoUrl?
-      `<div class="ref-foto-wrap">${r.referencia}
+      `<div class="ref-foto-wrap">${shortRef3}
         <div class="ref-foto-tooltip" style="width:192px">
           <img src="${fotoUrl}" alt="${r.referencia}" onerror="this.parentElement.innerHTML='<div style=\\'width:180px;height:180px;display:flex;align-items:center;justify-content:center;color:#999;font-size:11px;text-align:center\\'>Sin foto<br>disponible</div>'">
           <div class="foto-lbl">${r.referencia}</div>
         </div>
-      </div>`:r.referencia;
+      </div>`:shortRef3;
     const scorePct=+(r.score*100).toFixed(1);
     const scoreColor=isBest?'#065f46':'#7f1d1d';
     return`<tr>
@@ -2052,88 +2055,58 @@ window.addEventListener('load',()=>{
 })();
 </script>
 
-<!-- Foto inline para móvil (touch) — se despliega dentro de la misma celda -->
+<!-- Tooltip de foto para móvil — misma lógica que desktop pero activado por touch -->
 <script>
 (function(){
-  // Solo activa en dispositivos touch
   if(!('ontouchstart' in window)) return;
 
-  // Estilo para el panel inline
-  const style = document.createElement('style');
-  style.textContent = `
-    .ref-foto-inline{
-      display:none;
-      margin-top:6px;
-      border-radius:8px;
-      overflow:hidden;
-      background:var(--surface);
-      border:1px solid var(--border);
-      box-shadow:0 4px 14px rgba(0,0,0,0.12);
-    }
-    .ref-foto-inline.open{ display:block; }
-    .ref-foto-inline img{
-      width:100%;
-      max-width:200px;
-      height:auto;
-      max-height:260px;
-      object-fit:contain;
-      display:block;
-      margin:0 auto;
-      padding:6px;
-      box-sizing:border-box;
-    }
-    /* En móvil el hover del tooltip no aplica */
-    @media(hover:none),(pointer:coarse){
-      .ref-foto-wrap:hover .ref-foto-tooltip{ display:none!important; }
-    }
-  `;
-  document.head.appendChild(style);
+  // Desactivar el :hover CSS en dispositivos touch
+  const s = document.createElement('style');
+  s.textContent = '@media(hover:none),(pointer:coarse){.ref-foto-wrap:hover .ref-foto-tooltip{display:none!important;}}';
+  document.head.appendChild(s);
 
-  let currentOpen = null;
+  let currentTip = null;
 
-  // Inyectar panel inline en cada ref-foto-wrap al primer toque
-  function ensureInline(wrap){
-    if(wrap.querySelector('.ref-foto-inline')) return;
-    const tip = wrap.querySelector('.ref-foto-tooltip');
-    if(!tip) return;
-    const img = tip.querySelector('img');
-    if(!img || !img.src) return;
-    const panel = document.createElement('div');
-    panel.className = 'ref-foto-inline';
-    const clone = document.createElement('img');
-    clone.src = img.src;
-    clone.alt = img.alt;
-    clone.onerror = () => { clone.style.display='none'; };
-    panel.appendChild(clone);
-    wrap.appendChild(panel);
+  function placeTip(tip, wrap){
+    const rect = wrap.getBoundingClientRect();
+    const tw = 200, th = 260;
+    const vw = window.innerWidth, vh = window.innerHeight;
+    let x = rect.left;
+    let y = rect.bottom + 6;
+    if(x + tw > vw - 8) x = vw - tw - 8;
+    if(x < 8) x = 8;
+    if(y + th > vh - 8) y = rect.top - th - 6;
+    if(y < 8) y = 8;
+    tip.style.left = x + 'px';
+    tip.style.top  = y + 'px';
   }
 
   document.addEventListener('touchend', function(e){
     const wrap = e.target.closest('.ref-foto-wrap');
 
-    // Toque fuera de cualquier wrap → cierra el abierto
+    // Toque fuera → cerrar
     if(!wrap){
-      if(currentOpen){ currentOpen.classList.remove('open'); currentOpen=null; }
+      if(currentTip){ currentTip.style.display='none'; currentTip=null; }
       return;
     }
 
-    ensureInline(wrap);
-    const panel = wrap.querySelector('.ref-foto-inline');
-    if(!panel) return;
+    const tip = wrap.querySelector('.ref-foto-tooltip');
+    if(!tip) return;
 
-    const isOpen = panel.classList.contains('open');
+    const isOpen = (tip.style.display === 'block');
 
-    // Cierra el anterior si es otro
-    if(currentOpen && currentOpen !== panel){
-      currentOpen.classList.remove('open');
+    // Cerrar el anterior si es diferente
+    if(currentTip && currentTip !== tip){
+      currentTip.style.display = 'none';
     }
 
     if(isOpen){
-      panel.classList.remove('open');
-      currentOpen = null;
+      tip.style.display = 'none';
+      currentTip = null;
     } else {
-      panel.classList.add('open');
-      currentOpen = panel;
+      placeTip(tip, wrap);
+      tip.style.display = 'block';
+      currentTip = tip;
     }
     e.preventDefault();
   }, {passive:false});
