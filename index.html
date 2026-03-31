@@ -260,8 +260,6 @@ body{overflow-x:hidden;}
 .ref-foto-tooltip img{width:180px;height:220px;object-fit:cover;border-radius:6px;display:block;}
 .ref-foto-tooltip .foto-lbl{font-size:11px;color:var(--text2);text-align:center;margin-top:5px;max-width:180px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 .ref-foto-wrap:hover .ref-foto-tooltip{display:block;}
-/* En móvil el hover no funciona bien — se usa el modal JS */
-@media(hover:none),(pointer:coarse){.ref-foto-wrap:hover .ref-foto-tooltip{display:none!important;}}
 tr.subtotal-row td{background:#f0f4ff!important;font-weight:700;border-top:2px solid var(--blue)!important;}
 tr.subtotal-row td:first-child{border-left:3px solid var(--blue);}
 tr.total-row td{background:#e8f5e9!important;font-weight:800;border-top:2px solid var(--green)!important;}
@@ -2054,38 +2052,89 @@ window.addEventListener('load',()=>{
 })();
 </script>
 
-<!-- Modal de foto para móvil (touch devices) -->
-<div id="foto-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.72);z-index:99998;align-items:center;justify-content:center;padding:20px;box-sizing:border-box;">
-  <div style="background:#fff;border-radius:14px;padding:14px;max-width:300px;width:100%;text-align:center;position:relative;box-shadow:0 12px 40px rgba(0,0,0,0.3);">
-    <button id="foto-modal-close" style="position:absolute;top:8px;right:10px;background:none;border:none;font-size:20px;cursor:pointer;color:#666;line-height:1;">✕</button>
-    <img id="foto-modal-img" src="" alt="" style="max-width:100%;max-height:340px;object-fit:contain;border-radius:8px;display:block;margin:0 auto;">
-    <div id="foto-modal-lbl" style="font-size:12px;color:#666;margin-top:8px;font-weight:600;"></div>
-  </div>
-</div>
+<!-- Foto inline para móvil (touch) — se despliega dentro de la misma celda -->
 <script>
 (function(){
-  const modal = document.getElementById('foto-modal');
-  const mImg  = document.getElementById('foto-modal-img');
-  const mLbl  = document.getElementById('foto-modal-lbl');
-  const mClose= document.getElementById('foto-modal-close');
-  function openModal(imgSrc, lbl){
-    mImg.src = imgSrc;
-    mLbl.textContent = lbl;
-    modal.style.display = 'flex';
-  }
-  function closeModal(){ modal.style.display = 'none'; mImg.src=''; }
-  mClose.addEventListener('click', closeModal);
-  modal.addEventListener('click', function(e){ if(e.target===modal) closeModal(); });
-  // Solo en dispositivos touch
-  document.addEventListener('touchstart', function(e){
-    const wrap = e.target.closest('.ref-foto-wrap');
-    if(!wrap) return;
+  // Solo activa en dispositivos touch
+  if(!('ontouchstart' in window)) return;
+
+  // Estilo para el panel inline
+  const style = document.createElement('style');
+  style.textContent = `
+    .ref-foto-inline{
+      display:none;
+      margin-top:6px;
+      border-radius:8px;
+      overflow:hidden;
+      background:var(--surface);
+      border:1px solid var(--border);
+      box-shadow:0 4px 14px rgba(0,0,0,0.12);
+    }
+    .ref-foto-inline.open{ display:block; }
+    .ref-foto-inline img{
+      width:100%;
+      max-width:200px;
+      height:auto;
+      max-height:260px;
+      object-fit:contain;
+      display:block;
+      margin:0 auto;
+      padding:6px;
+      box-sizing:border-box;
+    }
+    /* En móvil el hover del tooltip no aplica */
+    @media(hover:none),(pointer:coarse){
+      .ref-foto-wrap:hover .ref-foto-tooltip{ display:none!important; }
+    }
+  `;
+  document.head.appendChild(style);
+
+  let currentOpen = null;
+
+  // Inyectar panel inline en cada ref-foto-wrap al primer toque
+  function ensureInline(wrap){
+    if(wrap.querySelector('.ref-foto-inline')) return;
     const tip = wrap.querySelector('.ref-foto-tooltip');
     if(!tip) return;
     const img = tip.querySelector('img');
     if(!img || !img.src) return;
-    const lbl = tip.querySelector('.foto-lbl');
-    openModal(img.src, lbl ? lbl.textContent : '');
+    const panel = document.createElement('div');
+    panel.className = 'ref-foto-inline';
+    const clone = document.createElement('img');
+    clone.src = img.src;
+    clone.alt = img.alt;
+    clone.onerror = () => { clone.style.display='none'; };
+    panel.appendChild(clone);
+    wrap.appendChild(panel);
+  }
+
+  document.addEventListener('touchend', function(e){
+    const wrap = e.target.closest('.ref-foto-wrap');
+
+    // Toque fuera de cualquier wrap → cierra el abierto
+    if(!wrap){
+      if(currentOpen){ currentOpen.classList.remove('open'); currentOpen=null; }
+      return;
+    }
+
+    ensureInline(wrap);
+    const panel = wrap.querySelector('.ref-foto-inline');
+    if(!panel) return;
+
+    const isOpen = panel.classList.contains('open');
+
+    // Cierra el anterior si es otro
+    if(currentOpen && currentOpen !== panel){
+      currentOpen.classList.remove('open');
+    }
+
+    if(isOpen){
+      panel.classList.remove('open');
+      currentOpen = null;
+    } else {
+      panel.classList.add('open');
+      currentOpen = panel;
+    }
     e.preventDefault();
   }, {passive:false});
 })();
