@@ -491,11 +491,11 @@ const ROTACION_TOT=[{"coleccion":"2-2025","canal":"TOTAL COMPAÑIA","ingreso":23
 // Set of closed collections (>= 100 días) — frozen snapshot data
 const COLECCIONES_CERRADAS=new Set(["2-2025","3-2025","9-2025"]);
 
-const MONTHS=['01 - 2026','02 - 2026','03 - 2026'];
-const MLbl={'01 - 2026':'Enero','02 - 2026':'Febrero','03 - 2026':'Marzo','ACC':'Acumulado'};
+const MONTHS=['01 - 2026','02 - 2026','03 - 2026','04 - 2026'];
+const MLbl={'01 - 2026':'Enero','02 - 2026':'Febrero','03 - 2026':'Marzo','04 - 2026':'Abril','ACC':'Acumulado'};
 const CB=['CADENAS','ONLINE','OUTLETS','TIENDAS'];
 const CATICONS={'Camisetas':'👕','Camisas':'👔','Jeans':'👖','Shorts':'🩳','Pantalones':'👖','Buzos':'🧥','Polos':'👕','Vestidos':'👗','Chaquetas':'🧥','Gorras':'🧢','Faldas':'👗','Zapatos':'👟','Accesorios':'💍'};
-const COLICONS={'2-2025':'🌊','3-2025':'🌿','9-2025':'🍂','1-2026':'⭐'};
+const COLICONS={'2-2025':'🌊','3-2025':'🌿','9-2025':'🍂','1-2026':'⭐','2-2026':'🌸'};
 const PAL=['#3b82f6','#f59e0b','#10b981','#ef4444','#8b5cf6','#ec4899','#06b6d4','#f97316','#84cc16','#6366f1'];
 const THR=0.90;
 
@@ -1826,7 +1826,7 @@ function updHdr(){
 
 // ── MONTH TABS ──
 function buildMT(){
-  const opts=[{v:'ACC',l:'Acumulado'},{v:'01 - 2026',l:'Enero'},{v:'02 - 2026',l:'Febrero'},{v:'03 - 2026',l:'Marzo'}];
+  const opts=[{v:'ACC',l:'Acumulado'},{v:'01 - 2026',l:'Enero'},{v:'02 - 2026',l:'Febrero'},{v:'03 - 2026',l:'Marzo'},{v:'04 - 2026',l:'Abril'}];
   const el=document.getElementById('month-tabs');
   el.innerHTML=opts.map(o=>`<button class="mtab${state.mes===o.v?' active':''}" data-m="${o.v}">${o.l}</button>`).join('');
   el.querySelectorAll('.mtab').forEach(btn=>{btn.addEventListener('click',()=>{state.mes=btn.dataset.m;el.querySelectorAll('.mtab').forEach(b=>b.classList.toggle('active',b.dataset.m===state.mes));updHdr();rAct();});});
