@@ -159,10 +159,10 @@ function updNoos(f){const tbl=document.getElementById('tbl-noos');
   let d=NOOS_DATA;
   if(canal!=='all')d=d.filter(r=>r['CANAL RESUMEN']===canal);
 
-  const cols=['REFERENCIA DEF','Cumpl ene','Cumpl feb','Cumpl mar','vta ene','vta feb','proyección vta mar','Proy Abr','ene','feb','mar','abr','jun','sep'];
-  const sumCols=['vta ene','vta feb','proyección vta mar'];
-  const avgCols=['Cumpl ene','Cumpl feb','Cumpl mar','ene','feb','mar','abr','jun','sep'];
-  const dataKeys=['Cumpl ene','Cumpl ene.1','Cumpl mar','vta ene','vta feb','proyección vta mar','proyección vta abr','ene','feb','mar','abr','jun','sep'];
+  // cols: columnas visibles en la tabla (orden corregido: Proy Abr al lado de Cumpl Mar)
+  const cols=['REFERENCIA DEF','Cumpl ene','Cumpl feb','Cumpl mar','Proy Abr','vta ene','vta feb','proyección vta mar','ene','feb','mar','abr','jun','sep'];
+  // dataKeys: claves reales en NOOS_DATA usadas para sumar/promediar en TOTAL row
+  const dataKeys=['Cumpl ene','Cumpl ene.1','Cumpl mar','proyección vta abr','ene','feb','mar','ene.1','feb.1','mar.1','abr.1','jun','sep'];
   let h='<thead><tr>';
   cols.forEach(c=>{h+='<th>'+c+'</th>';});
   h+='</tr></thead><tbody>';
@@ -175,31 +175,31 @@ function updNoos(f){const tbl=document.getElementById('tbl-noos');
     h+=cumplCell(r['Cumpl ene']||0);
     h+=cumplCell(r['Cumpl ene.1']||0);
     h+=cumplCell(r['Cumpl mar']||0);
-    h+='<td>'+fm(r['vta ene']||0,'n')+'</td>';
-    h+='<td>'+fm(r['vta feb']||0,'n')+'</td>';
-    h+='<td>'+fm(r['proyección vta mar']||0,'n')+'</td>';
-    h+='<td>'+fm(r['proyección vta abr']||0,'n')+'</td>';
-    h+='<td>'+(r['ene']!=null?parseFloat(r['ene']).toFixed(1):'-')+'</td>';
-    h+='<td>'+(r['feb']!=null?parseFloat(r['feb']).toFixed(1):'-')+'</td>';
-    h+='<td>'+(r['mar']!=null?parseFloat(r['mar']).toFixed(1):'-')+'</td>';
-    h+='<td>'+(r['abr']!=null?parseFloat(r['abr']).toFixed(1):'-')+'</td>';
+    h+=cumplCell(r['proyección vta abr']||0);           // Proy Abr como % (al lado de Cumpl Mar)
+    h+='<td>'+fm(r['ene']||0,'n')+'</td>';              // vta ene = PROY VTA UND ene
+    h+='<td>'+fm(r['feb']||0,'n')+'</td>';              // vta feb = PROY VTA UND feb
+    h+='<td>'+fm(r['mar']||0,'n')+'</td>';              // proyección vta mar = PROY VTA UND mar
+    h+='<td>'+(r['ene.1']!=null?parseFloat(r['ene.1']).toFixed(1):'-')+'</td>';  // meses inv ene
+    h+='<td>'+(r['feb.1']!=null?parseFloat(r['feb.1']).toFixed(1):'-')+'</td>';  // meses inv feb
+    h+='<td>'+(r['mar.1']!=null?parseFloat(r['mar.1']).toFixed(1):'-')+'</td>';  // meses inv mar
+    h+='<td>'+(r['abr.1']!=null?parseFloat(r['abr.1']).toFixed(1):'-')+'</td>';  // ppto/meses inv abr
     h+='<td>'+(r['jun']!=null?parseFloat(r['jun']).toFixed(1):'-')+'</td>';
     h+='<td>'+(r['sep']!=null?parseFloat(r['sep']).toFixed(1):'-')+'</td></tr>';
     dataKeys.forEach(k=>{const v=r[k];if(v!=null&&v!==''&&!isNaN(v)){totals[k]+=parseFloat(v);counts[k]++;}});});
 
-  // TOTAL row: sum for vta columns, average for everything else
+  // TOTAL row: sum para vta, promedio para cumplimientos y meses inv
   h+='<tr class="total-row"><td><strong>TOTAL</strong></td>';
   h+='<td>'+fm(counts['Cumpl ene']?totals['Cumpl ene']/counts['Cumpl ene']:0,'%')+'</td>';
   h+='<td>'+fm(counts['Cumpl ene.1']?totals['Cumpl ene.1']/counts['Cumpl ene.1']:0,'%')+'</td>';
   h+='<td>'+fm(counts['Cumpl mar']?totals['Cumpl mar']/counts['Cumpl mar']:0,'%')+'</td>';
-  h+='<td>'+fm(totals['vta ene'],'n')+'</td>';
-  h+='<td>'+fm(totals['vta feb'],'n')+'</td>';
-  h+='<td>'+fm(totals['proyección vta mar'],'n')+'</td>';
-  h+='<td>'+fm(totals['proyección vta abr'],'n')+'</td>';
-  h+='<td>'+(counts['ene']?(totals['ene']/counts['ene']).toFixed(1):'-')+'</td>';
-  h+='<td>'+(counts['feb']?(totals['feb']/counts['feb']).toFixed(1):'-')+'</td>';
-  h+='<td>'+(counts['mar']?(totals['mar']/counts['mar']).toFixed(1):'-')+'</td>';
-  h+='<td>'+(counts['abr']?(totals['abr']/counts['abr']).toFixed(1):'-')+'</td>';
+  h+='<td>'+fm(counts['proyección vta abr']?totals['proyección vta abr']/counts['proyección vta abr']:0,'%')+'</td>';
+  h+='<td>'+fm(totals['ene'],'n')+'</td>';
+  h+='<td>'+fm(totals['feb'],'n')+'</td>';
+  h+='<td>'+fm(totals['mar'],'n')+'</td>';
+  h+='<td>'+(counts['ene.1']?(totals['ene.1']/counts['ene.1']).toFixed(1):'-')+'</td>';
+  h+='<td>'+(counts['feb.1']?(totals['feb.1']/counts['feb.1']).toFixed(1):'-')+'</td>';
+  h+='<td>'+(counts['mar.1']?(totals['mar.1']/counts['mar.1']).toFixed(1):'-')+'</td>';
+  h+='<td>'+(counts['abr.1']?(totals['abr.1']/counts['abr.1']).toFixed(1):'-')+'</td>';
   h+='<td>'+(counts['jun']?(totals['jun']/counts['jun']).toFixed(1):'-')+'</td>';
   h+='<td>'+(counts['sep']?(totals['sep']/counts['sep']).toFixed(1):'-')+'</td></tr>';
   h+='</tbody>';
