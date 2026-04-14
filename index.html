@@ -1705,7 +1705,7 @@ function buildDD(menuId,triggerId,labelId,items,stateKey,labelFn,onChange){
     const allSel=state[stateKey].size===items.length;
     const selAllRow=`<div class="dd-item dd-selall${allSel?' selected':''}"><div class="dd-check">${allSel?'✓':''}</div><span style="font-weight:600">${allSel?'✗ Deseleccionar todos':'✓ Seleccionar todos'}</span></div>`;
     const divider=`<div style="height:1px;background:var(--border);margin:4px 0"></div>`;
-    const itemRows=items.map(v=>`<div class="dd-item${state[stateKey].has(v)&&state[stateKey].size===1?' selected':''}" data-val="${v}"><div class="dd-check">${state[stateKey].has(v)&&state[stateKey].size===1?'✓':''}</div><span>${labelFn(v)}</span></div>`).join('');
+    const itemRows=items.map(v=>`<div class="dd-item${state[stateKey].has(v)?' selected':''}" data-val="${v}"><div class="dd-check">${state[stateKey].has(v)?'✓':''}</div><span>${labelFn(v)}</span></div>`).join('');
     menu.innerHTML=selAllRow+divider+itemRows;
     // Seleccionar todos
     menu.querySelector('.dd-selall').addEventListener('click',e=>{
@@ -1713,17 +1713,14 @@ function buildDD(menuId,triggerId,labelId,items,stateKey,labelFn,onChange){
       items.forEach(v=>state[stateKey].add(v));
       build();upLbl();updHdr();if(onChange)onChange();rAct();
     });
-    // Selección individual → deselecciona los demás (single-select)
+    // Selección individual → toggle multi-select
     menu.querySelectorAll('.dd-item[data-val]').forEach(el=>{
       el.addEventListener('click',e=>{
         e.stopPropagation();
         const v=el.dataset.val;
-        // Si ya es el único seleccionado → vuelve a todos
-        if(state[stateKey].has(v)&&state[stateKey].size===1){
-          items.forEach(x=>state[stateKey].add(x));
+        if(state[stateKey].has(v)){
+          if(state[stateKey].size>1) state[stateKey].delete(v);
         } else {
-          // Selección única: limpia y selecciona solo este
-          state[stateKey].clear();
           state[stateKey].add(v);
         }
         build();upLbl();updHdr();if(onChange)onChange();rAct();
