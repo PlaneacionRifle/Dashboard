@@ -1707,10 +1707,11 @@ function buildDD(menuId,triggerId,labelId,items,stateKey,labelFn,onChange){
     const divider=`<div style="height:1px;background:var(--border);margin:4px 0"></div>`;
     const itemRows=items.map(v=>`<div class="dd-item${state[stateKey].has(v)?' selected':''}" data-val="${v}"><div class="dd-check">${state[stateKey].has(v)?'✓':''}</div><span>${labelFn(v)}</span></div>`).join('');
     menu.innerHTML=selAllRow+divider+itemRows;
-    // Seleccionar todos
+    // Toggle seleccionar / deseleccionar todos
     menu.querySelector('.dd-selall').addEventListener('click',e=>{
       e.stopPropagation();
-      items.forEach(v=>state[stateKey].add(v));
+      if(state[stateKey].size===items.length){ state[stateKey].clear(); }
+      else { items.forEach(v=>state[stateKey].add(v)); }
       build();upLbl();updHdr();if(onChange)onChange();rAct();
     });
     // Selección individual → toggle multi-select
@@ -1719,7 +1720,7 @@ function buildDD(menuId,triggerId,labelId,items,stateKey,labelFn,onChange){
         e.stopPropagation();
         const v=el.dataset.val;
         if(state[stateKey].has(v)){
-          if(state[stateKey].size>1) state[stateKey].delete(v);
+          state[stateKey].delete(v);
         } else {
           state[stateKey].add(v);
         }
