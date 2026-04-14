@@ -57,8 +57,8 @@ body{background:var(--bg);color:var(--text);font-family:'Inter',sans-serif;font-
 .kpi-label{font-size:10px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:0.8px;}
 .kpi-val{font-family:'Syne',sans-serif;font-size:32px;font-weight:800;line-height:1;color:var(--text);}
 .kpi-sub{font-size:11px;color:var(--text3);}
-.sem-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:14px;margin-bottom:24px;}
-.sem-card{background:var(--surface);border-radius:var(--radius);padding:18px;box-shadow:var(--shadow);border:1.5px solid var(--border);display:flex;flex-direction:column;align-items:center;gap:9px;transition:transform 0.2s,box-shadow 0.2s;position:relative;}
+.sem-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:10px;margin-bottom:24px;}
+.sem-card{background:var(--surface);border-radius:var(--radius);padding:10px 8px;box-shadow:var(--shadow);border:1.5px solid var(--border);display:flex;flex-direction:column;align-items:center;gap:5px;transition:transform 0.2s,box-shadow 0.2s;position:relative;}
 .sem-card:hover{transform:translateY(-2px);box-shadow:var(--shadow-lg);}
 #sem-tt{display:none;position:fixed;background:var(--surface);border:1.5px solid var(--border);border-radius:10px;padding:10px 13px;box-shadow:0 6px 24px rgba(0,0,0,0.18);z-index:99999;min-width:165px;pointer-events:none;white-space:nowrap;}
 .sem-tt-row{display:flex;justify-content:space-between;align-items:center;gap:14px;margin-bottom:4px;font-size:11px;}
@@ -70,18 +70,18 @@ body{background:var(--bg);color:var(--text);font-family:'Inter',sans-serif;font-
 .sem-tt-neg{color:var(--red);}
 .sem-tt-neu{color:var(--yellow);}
 .sem-card-subtotal{border:2px dashed var(--border)!important;background:var(--hover)!important;}
-.sem-icon-wrap{width:60px;height:60px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:24px;flex-shrink:0;}
+.sem-icon-wrap{width:40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;}
 .sem-green{background:var(--green-bg);border:3px solid var(--green);}
 .sem-yellow{background:var(--yellow-bg);border:3px solid var(--yellow);}
 .sem-red{background:var(--red-bg);border:3px solid var(--red);}
 .sem-w{background:#fff8e6;border:3px solid #f59e0b;}
 .sem-pct.w{color:#f59e0b;}
-.sem-title{font-size:11px;font-weight:600;color:var(--text);text-align:center;line-height:1.3;}
-.sem-pct{font-family:'Syne',sans-serif;font-size:28px;font-weight:800;line-height:1;}
+.sem-title{font-size:10px;font-weight:600;color:var(--text);text-align:center;line-height:1.2;}
+.sem-pct{font-family:'Syne',sans-serif;font-size:22px;font-weight:800;line-height:1;}
 .sem-pct.green{color:var(--green);}
 .sem-pct.yellow{color:var(--yellow);}
 .sem-pct.red{color:var(--red);}
-.sem-sub{font-size:10px;color:var(--text3);text-align:center;line-height:1.4;}
+.sem-sub{font-size:9px;color:var(--text3);text-align:center;line-height:1.3;}
 .sem-bar{width:100%;height:5px;background:var(--bg);border-radius:3px;overflow:hidden;}
 .sem-bar-fill{height:100%;border-radius:3px;}
 .chart-row{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px;}
@@ -352,7 +352,7 @@ tr.total-row td:first-child{border-left:3px solid var(--green);}
   </div>
   <div class="table-card">
     <div class="thr"><span class="tht">Detalle por Género y Categoría</span><span class="tcnt" id="t1cnt"></span></div>
-    <div class="tscroll"><table><thead><tr><th>Género</th><th>Categoría</th><th>Proyección $$</th><th>Presupuesto $$</th><th>Cumpl $$</th><th>Proyección Und</th><th>Presupuesto Und</th><th>Cumpl Und</th><th>AUR</th><th>Margen</th></tr></thead><tbody id="tb1"></tbody></table></div>
+    <div class="tscroll"><table><thead><tr><th>Género</th><th>Categoría</th><th>Presupuesto $$</th><th>Proyección $$</th><th>Cumpl $$</th><th>Presupuesto Und</th><th>Proyección Und</th><th>Cumpl Und</th><th>AUR</th><th>Margen</th></tr></thead><tbody id="tb1"></tbody></table></div>
   </div>
 </div>
 
@@ -728,25 +728,46 @@ function rT1(){
   // CAT_ORDER for presupuesto table
   const CAT_ORDER_B=['Camisetas','Camisas','Chaquetas','Jeans','Faldas','Shorts','Bermudas','Pantalones','Vestidos','Buzos','Polos','Accesorios','Zapatos','Gorras'];
   const GEN_ORDER_B=['Femenino','Masculino','Unisex'];
-  const rows=Object.values(bGC).sort((a,b)=>{
+  const sorted=Object.values(bGC).sort((a,b)=>{
     const gd=GEN_ORDER_B.indexOf(a.g)-GEN_ORDER_B.indexOf(b.g); if(gd!==0)return gd;
     return (CAT_ORDER_B.indexOf(a.c)<0?99:CAT_ORDER_B.indexOf(a.c))-(CAT_ORDER_B.indexOf(b.c)<0?99:CAT_ORDER_B.indexOf(b.c));
-  }).map(r=>{
+  });
+  // Build rows grouped by gender with subtotals
+  const genGroups={};
+  sorted.forEach(r=>{
+    if(!genGroups[r.g])genGroups[r.g]=[];
+    genGroups[r.g].push(r);
+  });
+  const buildRow=(r,isTotal,label)=>{
     const cu=r.pt>0?r.pr/r.pt:0;
     const uu=r.ptU>0?r.prU/r.ptU:0;
-    // Margen ponderado por proy_usd (corregido)
     const mg=r.mg_w>0?r.mg_sum/r.mg_w:null;
-    // AUR = proy_usd / proy_und
     const aur=r.prU>0?r.pr/r.prU:0;
-    return`<tr>
-      <td>${r.g}</td><td>${CATICONS[r.c]||''} ${r.c}</td>
-      <td>${fmtM(r.pr)}</td><td>${fmtM(r.pt)}</td><td>${pillC(cu)}</td>
-      <td>${fmtN(r.prU)}</td><td>${fmtN(r.ptU)}</td><td>${pillC(uu)}</td>
+    const cls=isTotal?` class="${isTotal}"`:'';
+    const g=label||r.g;
+    const c=label?(isTotal==='total-row'?'TOTAL GENERAL':`Total ${r.g}`):`${CATICONS[r.c]||''} ${r.c}`;
+    return`<tr${cls}>
+      <td>${g}</td><td>${c}</td>
+      <td>${fmtM(r.pt)}</td><td>${fmtM(r.pr)}</td><td>${pillC(cu)}</td>
+      <td>${fmtN(r.ptU)}</td><td>${fmtN(r.prU)}</td><td>${pillC(uu)}</td>
       <td style="color:var(--blue);font-weight:600">${aur>0?'$'+Math.round(aur/1000)+'K':'—'}</td>
       <td style="color:var(--purple);font-weight:600">${mg!=null?fmtP(mg):'—'}</td>
     </tr>`;
+  };
+  const grandTot={g:'',c:'',pr:0,pt:0,prU:0,ptU:0,mg_sum:0,mg_w:0};
+  let rows=[];
+  GEN_ORDER_B.filter(g=>genGroups[g]).forEach(g=>{
+    const grp=genGroups[g];
+    const genTot={g:g,c:'',pr:0,pt:0,prU:0,ptU:0,mg_sum:0,mg_w:0};
+    grp.forEach(r=>{
+      rows.push(buildRow(r,null,null));
+      genTot.pr+=r.pr;genTot.pt+=r.pt;genTot.prU+=r.prU;genTot.ptU+=r.ptU;genTot.mg_sum+=r.mg_sum;genTot.mg_w+=r.mg_w;
+      grandTot.pr+=r.pr;grandTot.pt+=r.pt;grandTot.prU+=r.prU;grandTot.ptU+=r.ptU;grandTot.mg_sum+=r.mg_sum;grandTot.mg_w+=r.mg_w;
+    });
+    rows.push(buildRow(genTot,'subtotal-row','📊'));
   });
-  document.getElementById('tb1').innerHTML=rows.join('');document.getElementById('t1cnt').textContent=rows.length+' filas';
+  rows.push(buildRow(grandTot,'total-row','📊'));
+  document.getElementById('tb1').innerHTML=rows.join('');document.getElementById('t1cnt').textContent=sorted.length+' filas';
 }
 
 // ── TAB 2 — usa ROTACION_AGG (rot_real=venta/ingreso, rot_ideal=maestro(semanas))
