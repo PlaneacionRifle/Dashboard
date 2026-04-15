@@ -823,7 +823,7 @@ function rT2(){
   ].map(k=>`<div class="kpi-card" style="--kc:${k.kc}"><div class="kpi-icon">${k.i}</div><div class="kpi-label">${k.l}</div><div class="kpi-val" style="${k.vc?'color:'+k.vc:''}">${k.v}</div><div class="kpi-sub">${k.s}</div></div>`).join('');
 
   // Semáforos por colección — usa diasCol (colección-level) para coincidir con KPI
-  const cols=Object.keys(bCol).sort();
+  const cols=Object.keys(bCol).sort((a,b)=>{const pa=a.split('-'),pb=b.split('-');const ya=+pa[pa.length-1],yb=+pb[pb.length-1];if(ya!==yb)return yb-ya;return +pb[0]-+pa[0];});
   document.getElementById('sem-col').innerHTML=cols.map(c=>{
     const r=bCol[c];
     const diasCol=(()=>{const rec=data.find(d=>d.coleccion===c&&d.dias_col>0);return rec?rec.dias_col:0;})();
