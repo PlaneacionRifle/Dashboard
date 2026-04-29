@@ -578,4 +578,15 @@ function updAlcance(f){
         tooltip:{backgroundColor:'#fff',titleColor:'#1a1d27',bodyColor:'#4a4f63',borderColor:'#d8dbe4',borderWidth:1,padding:12,titleFont:{weight:'700'},
           callbacks:{
             label:function(ctx){return' '+ctx.dataset.label+': '+nf(ctx.raw)+' und';},
-            afterBody:function(items){const i=items[0].dataIndex;const mi=mesesInv[i];if(
+            afterBody:function(items){const i=items[0].dataIndex;const mi=mesesInv[i];if(mi!=null)return[' ','  Meses Inv: '+mi.toFixed(1)];return[];}
+          }}},
+      scales:{x:{ticks:{color:'#7a7f94',font:{size:11}},grid:{color:'#ebedf2'}},y:{ticks:{color:'#7a7f94',font:{size:10}},grid:{color:'#ebedf2'}}}}
+  });
+}
+
+Chart.defaults.backgroundColor='transparent';Chart.defaults.borderColor='#ebedf2';Chart.defaults.color='#4a4f63';Chart.defaults.font.family='Inter';
+initFilters();refresh();
+</script>
+<div class="img-tooltip" id="img-tooltip"><img id="img-tt-img" src="" alt=""></div>
+</body>
+</html>
