@@ -400,7 +400,7 @@ function updChReal(f){const ano=f.ano,cs=f.canal!=='all'?[f.canal]:['TIENDAS','C
   charts['ch-und-real']=new Chart(document.getElementById('ch-und-real'),{type:'line',data:{labels:ms.map(m=>MN[m]),datasets:[...undDs]},options:mo()});
   // Margen real
   dc('ch-margen-real');charts['ch-margen-real']=new Chart(document.getElementById('ch-margen-real'),{type:'line',data:{labels:ms.map(m=>MN[m]),datasets:cs.map((c,i)=>({label:c,data:gd(c,'margen').map(v=>v!=null?v*100:null),borderColor:PAL[i],tension:.35,fill:false,spanGaps:true,pointRadius:3,pointBackgroundColor:PAL[i]}))},options:mo(v=>v.toFixed(0)+'%')});
-  
+}
 function updCatTblReal(f){const tbl=document.getElementById('tbl-cat-real');const SO=D.cat_sort_order;
   // by_cat_gen for actual venta (current year)
   let bcgF=D.by_cat_gen.filter(r=>r.ano===f.ano&&mm(r.mes));
