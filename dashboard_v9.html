@@ -400,19 +400,17 @@ function updChReal(f){const ano=f.ano,cs=f.canal!=='all'?[f.canal]:['TIENDAS','C
   charts['ch-und-real']=new Chart(document.getElementById('ch-und-real'),{type:'line',data:{labels:ms.map(m=>MN[m]),datasets:[...undDs]},options:mo()});
   // Margen real
   dc('ch-margen-real');charts['ch-margen-real']=new Chart(document.getElementById('ch-margen-real'),{type:'line',data:{labels:ms.map(m=>MN[m]),datasets:cs.map((c,i)=>({label:c,data:gd(c,'margen').map(v=>v!=null?v*100:null),borderColor:PAL[i],tension:.35,fill:false,spanGaps:true,pointRadius:3,pointBackgroundColor:PAL[i]}))},options:mo(v=>v.toFixed(0)+'%')});
-  // Crecimiento real vs año anterior
-  dc('ch-crec-real');charts['ch-crec-real']=new Chart(document.getElementById('ch-crec-real'),{type:'line',data:{labels:ms.map(m=>MN[m]),datasets:cs.map((c,i)=>{const data=ms.map(m=>{const r=kd.find(x=>x.ano===ano&&x.mes===m&&x.canal===c);if(!r)return null;return r.vta_ant_real?((r.vta/r.vta_ant_real)-1)*100:null;});return{label:c,data,borderColor:PAL[i],tension:.35,fill:false,spanGaps:true,pointRadius:3,pointBackgroundColor:PAL[i]};})},options:{...mo(v=>v.toFixed(0)+'%'),plugins:{...mo().plugins,annotation:{drawTime:'afterDatasetsDraw',annotations:[{type:'line',yMin:0,yMax:0,borderColor:'#ff6b6b55',borderWidth:1,borderDash:[4,4]}]}}}});}
-
+  
 function updCatTblReal(f){const tbl=document.getElementById('tbl-cat-real');const SO=D.cat_sort_order;
-  // Prior-year real from und_ant/vta_ant stored in current-year by_cat_gen rows
-  const cm={};bcgF.filter(r=>r.gen==='Masculino'||r.gen==='Femenino').forEach(r=>{
-    const k=r.gen+'|'+r.cat;if(!cm[k])cm[k]={gen:r.gen,cat:r.cat,va:0,ua:0};
-    cm[k].va+=r.vta_ant||0;cm[k].ua+=r.und_ant||0;});
-  // by_cat_gen for actual venta
+  // by_cat_gen for actual venta (current year)
   let bcgF=D.by_cat_gen.filter(r=>r.ano===f.ano&&mm(r.mes));
   if(f.canal!=='all')bcgF=bcgF.filter(r=>r.canal===f.canal);
   if(f.genero!=='all')bcgF=bcgF.filter(r=>r.gen===f.genero);
   if(f.categoria!=='all')bcgF=bcgF.filter(r=>r.cat===f.categoria);
+  // Prior-year real from und_ant/vta_ant stored in each row (from Venta sheet)
+  const cm={};bcgF.filter(r=>r.gen==='Masculino'||r.gen==='Femenino').forEach(r=>{
+    const k=r.gen+'|'+r.cat;if(!cm[k])cm[k]={gen:r.gen,cat:r.cat,va:0,ua:0};
+    cm[k].va+=r.vta_ant||0;cm[k].ua+=r.und_ant||0;});
   const bm={};bcgF.filter(r=>r.gen==='Masculino'||r.gen==='Femenino').forEach(r=>{
     const k=r.gen+'|'+r.cat;if(!bm[k])bm[k]={vta:0,und:0,contrib:0,costo:0,dscto:0};
     bm[k].vta+=r.vta||0;bm[k].und+=r.und||0;bm[k].contrib+=r.contrib||0;bm[k].costo+=r.costo||0;bm[k].dscto+=r.dscto||0;});
