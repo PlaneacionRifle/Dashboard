@@ -392,24 +392,24 @@ function updChReal(f){const ano=f.ano,cs=f.canal!=='all'?[f.canal]:['TIENDAS','C
   dc('ch-vta-real');
   const vtaDs=cs.map((c,i)=>({label:c+' Real',data:gd(c,'vta'),borderColor:PAL[i],tension:.35,fill:false,pointRadius:3,pointBackgroundColor:PAL[i]}));
   const vtaAntDs=cs.map((c,i)=>({label:c+' Año Ant.',data:gdAnt(c,'vta_ant_real'),borderColor:PAL[i],borderDash:[4,4],tension:.35,fill:false,pointRadius:2,pointBackgroundColor:PAL[i],spanGaps:true}));
-  charts['ch-vta-real']=new Chart(document.getElementById('ch-vta-real'),{type:'line',data:{labels:ms.map(m=>MN[m]),datasets:[...vtaDs,...vtaAntDs]},options:mo(fmAxis,fmm)});
+  charts['ch-vta-real']=new Chart(document.getElementById('ch-vta-real'),{type:'line',data:{labels:ms.map(m=>MN[m]),datasets:[...vtaDs]},options:mo(fmAxis,fmm)});
   // Chart unidades real vs año anterior
   dc('ch-und-real');
   const undDs=cs.map((c,i)=>({label:c+' Real',data:gd(c,'und'),borderColor:PAL[i],tension:.35,fill:false,pointRadius:3,pointBackgroundColor:PAL[i]}));
   const undAntDs=cs.map((c,i)=>({label:c+' Año Ant.',data:gdAnt(c,'und_ant_real'),borderColor:PAL[i],borderDash:[4,4],tension:.35,fill:false,pointRadius:2,pointBackgroundColor:PAL[i],spanGaps:true}));
-  charts['ch-und-real']=new Chart(document.getElementById('ch-und-real'),{type:'line',data:{labels:ms.map(m=>MN[m]),datasets:[...undDs,...undAntDs]},options:mo()});
+  charts['ch-und-real']=new Chart(document.getElementById('ch-und-real'),{type:'line',data:{labels:ms.map(m=>MN[m]),datasets:[...undDs]},options:mo()});
   // Margen real
   dc('ch-margen-real');charts['ch-margen-real']=new Chart(document.getElementById('ch-margen-real'),{type:'line',data:{labels:ms.map(m=>MN[m]),datasets:cs.map((c,i)=>({label:c,data:gd(c,'margen').map(v=>v!=null?v*100:null),borderColor:PAL[i],tension:.35,fill:false,spanGaps:true,pointRadius:3,pointBackgroundColor:PAL[i]}))},options:mo(v=>v.toFixed(0)+'%')});
   // Crecimiento real vs año anterior
   dc('ch-crec-real');charts['ch-crec-real']=new Chart(document.getElementById('ch-crec-real'),{type:'line',data:{labels:ms.map(m=>MN[m]),datasets:cs.map((c,i)=>{const data=ms.map(m=>{const r=kd.find(x=>x.ano===ano&&x.mes===m&&x.canal===c);if(!r)return null;return r.vta_ant_real?((r.vta/r.vta_ant_real)-1)*100:null;});return{label:c,data,borderColor:PAL[i],tension:.35,fill:false,spanGaps:true,pointRadius:3,pointBackgroundColor:PAL[i]};})},options:{...mo(v=>v.toFixed(0)+'%'),plugins:{...mo().plugins,annotation:{drawTime:'afterDatasetsDraw',annotations:[{type:'line',yMin:0,yMax:0,borderColor:'#ff6b6b55',borderWidth:1,borderDash:[4,4]}]}}}});}
 
 function updCatTblReal(f){const tbl=document.getElementById('tbl-cat-real');const SO=D.cat_sort_order;
-  // cumpl_detail for va/ua (año anterior from Alcance)
-  let cd=D.cumpl_detail.filter(r=>r.ano===f.ano&&mm(r.mes));
-  if(f.canal!=='all')cd=cd.filter(r=>r.canal===f.canal);
-  const cm={};cd.filter(r=>r.gen==='Masculino'||r.gen==='Femenino').forEach(r=>{
+  // Prior-year real sales from by_cat_gen (venta real año anterior)
+  let cdPY=D.by_cat_gen.filter(r=>r.ano===f.ano-1&&mm(r.mes));
+  if(f.canal!=='all')cdPY=cdPY.filter(r=>r.canal===f.canal);
+  const cm={};cdPY.filter(r=>r.gen==='Masculino'||r.gen==='Femenino').forEach(r=>{
     const k=r.gen+'|'+r.cat;if(!cm[k])cm[k]={gen:r.gen,cat:r.cat,va:0,ua:0};
-    cm[k].va+=r.vta_ant||0;cm[k].ua+=r.und_ant||0;});
+    cm[k].va+=r.vta||0;cm[k].ua+=r.und||0;});
   // by_cat_gen for actual venta
   let bcgF=D.by_cat_gen.filter(r=>r.ano===f.ano&&mm(r.mes));
   if(f.canal!=='all')bcgF=bcgF.filter(r=>r.canal===f.canal);
