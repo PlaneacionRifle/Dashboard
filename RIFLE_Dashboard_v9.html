@@ -233,7 +233,7 @@ function updKPI(f){const el=document.getElementById('kpi-cards');
   dAll.forEach(r=>{u+=r.und||0;v+=r.vta||0;c+=r.contrib||0;co+=r.costo||0;v_alc+=r.vta_alc||0;co_alc+=r.costo_alc||0;pv+=r.proy_vta||0;pu+=r.proy_und||0;});
   let inv=0;const maxRI=(f.ano===D.filters.max_real_ano)?D.filters.max_real_mes:12;const invMes=lastMes!==null?lastMes:maxRI;
   dAll.filter(r=>r.mes===invMes).forEach(r=>{inv+=r.inv||0;});
-  let bodInv=0;D.bodega.filter(r=>r.ano===f.ano&&r.mes===invMes).forEach(r=>{bodInv+=r.inv||0;});
+  let bodInv=0;if(f.canal==='all'){D.bodega.filter(r=>r.ano===f.ano&&r.mes===invMes).forEach(r=>{bodInv+=r.inv||0;});}
   inv+=bodInv;
   const cm=gCumpl(f);
   const mg=v_alc?(v_alc-co_alc)/v_alc:(v?(v-co)/v:null);
@@ -343,7 +343,7 @@ function updKPIReal(f){const el=document.getElementById('kpi-cards-real');
   dAll.forEach(r=>{u+=r.und||0;v+=r.vta||0;c+=r.contrib||0;v_alc+=r.vta_alc||0;co_alc+=r.costo_alc||0;va+=r.vta_ant_real||0;ua+=r.und_ant_real||0;});
   let inv=0;const maxRI=(f.ano===D.filters.max_real_ano)?D.filters.max_real_mes:12;const invMes=lastMes!==null?lastMes:maxRI;
   dAll.filter(r=>r.mes===invMes).forEach(r=>{inv+=r.inv||0;});
-  let bodInv=0;D.bodega.filter(r=>r.ano===f.ano&&r.mes===invMes).forEach(r=>{bodInv+=r.inv||0;});
+  let bodInv=0;if(f.canal==='all'){D.bodega.filter(r=>r.ano===f.ano&&r.mes===invMes).forEach(r=>{bodInv+=r.inv||0;});}
   inv+=bodInv;
   const mg=v_alc?(v_alc-co_alc)/v_alc:null;
   const crecV=va?(v/va)-1:null;const crecU=ua?(u/ua)-1:null;
