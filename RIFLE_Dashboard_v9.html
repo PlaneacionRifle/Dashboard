@@ -447,8 +447,7 @@ function updComp(f){const ano=f.ano;
   // Venta data filtered by ALL filters (by_cat_gen)
   const vtaData=fCD(f);
   // Inventory from inv_catgen filtered by canal + gen + cat
-  // FIX: inv_catgen filtered by canal+cat+gen, then scaled proportionally
-  // by active tipo/precio/origen filters using venta ratios per (canal+cat+gen) group
+  // FIX: inv_catgen filtered by canal+cat+gen, scaled by tipo/precio/origen proportion
   function getScaledInv(){
     let base=D.inv_catgen.filter(r=>r.ano===ano&&mm(r.mes));
     if(f.canal!=='all')base=base.filter(r=>r.canal===f.canal);
@@ -465,7 +464,7 @@ function updComp(f){const ano=f.ano;
     return base.map(r=>{const gk=r.canal+'|'+r.cat+'|'+r.gen;const ratio=totAll[gk]>0?(totFilt[gk]||0)/totAll[gk]:0;return Object.assign({},r,{inv:(r.inv||0)*ratio});});
   }
   const invData=getScaledInv();
-  // FIX: distribute inv proportionally by venta dimension (for tipo/precio/origen tables)
+  // FIX: distribute inv proportionally by venta dim (for tipo/precio/origen tables)
   function invByVtaDimProp(keyFn){
     const vdm={},vtm={};
     vtaData.forEach(r=>{const gk=r.canal+'|'+r.cat+'|'+r.gen;const dk=keyFn(r);if(!dk)return;if(!vdm[gk])vdm[gk]={};vdm[gk][dk]=(vdm[gk][dk]||0)+(r.und||0);vtm[gk]=(vtm[gk]||0)+(r.und||0);});
@@ -588,4 +587,22 @@ function updAlcance(f){
       {label:'Vta Und Año Ant',data:vtaAnt,backgroundColor:'#6c5ce744',borderColor:'#6c5ce7',borderWidth:1.5,borderRadius:3,order:2},
       {label:'Vta Und Actual',data:vtaAct,backgroundColor:'#4f8cff66',borderColor:'#4f8cff',borderWidth:1.5,borderRadius:3,order:2},
       {label:'Ppto Vta Und',data:ppto,type:'line',borderColor:'#00d68f',backgroundColor:'transparent',borderWidth:2.5,tension:.3,pointRadius:4,pointBackgroundColor:'#00d68f',order:1},
-      {label:'Inv Final c/ Bodega',data:invFin,type:'line',borderColor:'#ffa726',backgr
+      {label:'Inv Final c/ Bodega',data:invFin,type:'line',borderColor:'#ffa726',backgroundColor:'transparent',borderWidth:2.5,tension:.3,pointRadius:4,pointBackgroundColor:'#ffa726',borderDash:[6,3],order:1},
+    ]},
+    options:{responsive:true,interaction:{intersect:false,mode:'index'},
+      plugins:{legend:{labels:{color:'#4a4f63',font:{size:11,family:'Inter'},usePointStyle:true,padding:12}},
+        tooltip:{backgroundColor:'#fff',titleColor:'#1a1d27',bodyColor:'#4a4f63',borderColor:'#d8dbe4',borderWidth:1,padding:12,titleFont:{weight:'700'},
+          callbacks:{
+            label:function(ctx){return' '+ctx.dataset.label+': '+nf(ctx.raw)+' und';},
+            afterBody:function(items){const i=items[0].dataIndex;const mi=mesesInv[i];if(mi!=null)return[' ','  Meses Inv: '+mi.toFixed(1)];return[];}
+          }}},
+      scales:{x:{ticks:{color:'#7a7f94',font:{size:11}},grid:{color:'#ebedf2'}},y:{ticks:{color:'#7a7f94',font:{size:10}},grid:{color:'#ebedf2'}}}}
+  });
+}
+
+Chart.defaults.backgroundColor='transparent';Chart.defaults.borderColor='#ebedf2';Chart.defaults.color='#4a4f63';Chart.defaults.font.family='Inter';
+initFilters();refresh();
+</script>
+<div class="img-tooltip" id="img-tooltip"><img id="img-tt-img" src="" alt=""></div>
+</body>
+</html>
