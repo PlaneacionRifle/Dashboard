@@ -447,11 +447,32 @@ function updComp(f){const ano=f.ano;
   // Venta data filtered by ALL filters (by_cat_gen)
   const vtaData=fCD(f);
   // Inventory from inv_catgen filtered by canal + gen + cat
-  function fCI(){let d=D.inv_catgen.filter(r=>r.ano===ano&&mm(r.mes));if(f.canal!=='all')d=d.filter(r=>r.canal===f.canal);if(f.genero!=='all')d=d.filter(r=>r.gen===f.genero);if(f.categoria!=='all')d=d.filter(r=>r.cat===f.categoria);return d;}
-  const invData=fCI();
-  // comp_vta/comp_inv for dims not in by_cat_gen (canal-only filter)
-  function fv(key){let d=D.comp_vta[key].filter(r=>r.ano===ano&&mm(r.mes));if(f.canal!=='all')d=d.filter(r=>r.canal===f.canal);return d;}
-  function fi(key){let d=D.comp_inv[key].filter(r=>r.ano===ano&&mm(r.mes));if(f.canal!=='all')d=d.filter(r=>r.canal===f.canal);return d;}
+  // FIX: inv_catgen filtered by canal+cat+gen, then scaled proportionally
+  // by active tipo/precio/origen filters using venta ratios per (canal+cat+gen) group
+  function getScaledInv(){
+    let base=D.inv_catgen.filter(r=>r.ano===ano&&mm(r.mes));
+    if(f.canal!=='all')base=base.filter(r=>r.canal===f.canal);
+    if(f.genero!=='all')base=base.filter(r=>r.gen===f.genero);
+    if(f.categoria!=='all')base=base.filter(r=>r.cat===f.categoria);
+    if(f.tipo==='all'&&f.precio==='all'&&f.origen==='all')return base;
+    let baseVta=D.by_cat_gen.filter(r=>r.ano===ano&&mm(r.mes));
+    if(f.canal!=='all')baseVta=baseVta.filter(r=>r.canal===f.canal);
+    if(f.genero!=='all')baseVta=baseVta.filter(r=>r.gen===f.genero);
+    if(f.categoria!=='all')baseVta=baseVta.filter(r=>r.cat===f.categoria);
+    const totAll={},totFilt={};
+    baseVta.forEach(r=>{const gk=r.canal+'|'+r.cat+'|'+r.gen;totAll[gk]=(totAll[gk]||0)+(r.und||0);});
+    vtaData.forEach(r=>{const gk=r.canal+'|'+r.cat+'|'+r.gen;totFilt[gk]=(totFilt[gk]||0)+(r.und||0);});
+    return base.map(r=>{const gk=r.canal+'|'+r.cat+'|'+r.gen;const ratio=totAll[gk]>0?(totFilt[gk]||0)/totAll[gk]:0;return Object.assign({},r,{inv:(r.inv||0)*ratio});});
+  }
+  const invData=getScaledInv();
+  // FIX: distribute inv proportionally by venta dimension (for tipo/precio/origen tables)
+  function invByVtaDimProp(keyFn){
+    const vdm={},vtm={};
+    vtaData.forEach(r=>{const gk=r.canal+'|'+r.cat+'|'+r.gen;const dk=keyFn(r);if(!dk)return;if(!vdm[gk])vdm[gk]={};vdm[gk][dk]=(vdm[gk][dk]||0)+(r.und||0);vtm[gk]=(vtm[gk]||0)+(r.und||0);});
+    const res={};
+    invData.forEach(r=>{const gk=r.canal+'|'+r.cat+'|'+r.gen;const inv=r.inv||0;const dims=vdm[gk];const tot=vtm[gk]||0;if(dims&&tot>0){Object.entries(dims).forEach(([dk,vv])=>{res[dk]=(res[dk]||0)+inv*vv/tot;});}});
+    return Object.entries(res).sort((a,b)=>b[1]-a[1]);
+  }
   function agU(arr){const m={};arr.forEach(r=>{if(!m[r.dim])m[r.dim]=0;m[r.dim]+=r.und||0;});return Object.entries(m).sort((a,b)=>b[1]-a[1]);}
   function agI(arr){const m={};arr.forEach(r=>{if(!m[r.dim])m[r.dim]=0;m[r.dim]+=r.inv||0;});return Object.entries(m).sort((a,b)=>b[1]-a[1]);}
   // Aggregate by_cat_gen or inv_catgen by a key field
@@ -487,12 +508,10 @@ function updComp(f){const ano=f.ano;
   buildCompTable('comp-tbl-gen',agV(vtaData,r=>r.gen),agInv(invData,r=>r.gen));
   // Categoría — uses by_cat_gen + inv_catgen (responds to all filters)
   buildCompTable('comp-tbl-cat',agV(vtaData,r=>r.cat),agInv(invData,r=>r.cat));
-  // Moda vs Icónico — venta from by_cat_gen (filters work); inv from comp_inv (canal only)
-  buildCompTable('comp-tbl-tipo',agV(vtaData,r=>r.tipo),agI(fi('tipo_producto')));
-  // Value vs Traslado — todos los canales incl BODEGA
-  buildCompTable('comp-tbl-origen',agV(vtaData,r=>r.origen),agI(fi('origen')));
-  // Económico vs Normal
-  buildCompTable('comp-tbl-precio',agV(vtaData,r=>r.precio),agI(fi('tipo_precio')));
+  // Tipo/Origen/Precio — inv distributed proportionally from scaled invData
+  buildCompTable('comp-tbl-tipo',agV(vtaData,r=>r.tipo),invByVtaDimProp(r=>r.tipo));
+  buildCompTable('comp-tbl-origen',agV(vtaData,r=>r.origen),invByVtaDimProp(r=>r.origen));
+  buildCompTable('comp-tbl-precio',agV(vtaData,r=>r.precio),invByVtaDimProp(r=>r.precio));
   // Año Temporada — top 15 by venta, inventario desde D.inv_temp
   (function(){
     const vData=agV(vtaData,r=>r.temp).slice(0,15);
@@ -569,22 +588,4 @@ function updAlcance(f){
       {label:'Vta Und Año Ant',data:vtaAnt,backgroundColor:'#6c5ce744',borderColor:'#6c5ce7',borderWidth:1.5,borderRadius:3,order:2},
       {label:'Vta Und Actual',data:vtaAct,backgroundColor:'#4f8cff66',borderColor:'#4f8cff',borderWidth:1.5,borderRadius:3,order:2},
       {label:'Ppto Vta Und',data:ppto,type:'line',borderColor:'#00d68f',backgroundColor:'transparent',borderWidth:2.5,tension:.3,pointRadius:4,pointBackgroundColor:'#00d68f',order:1},
-      {label:'Inv Final c/ Bodega',data:invFin,type:'line',borderColor:'#ffa726',backgroundColor:'transparent',borderWidth:2.5,tension:.3,pointRadius:4,pointBackgroundColor:'#ffa726',borderDash:[6,3],order:1},
-    ]},
-    options:{responsive:true,interaction:{intersect:false,mode:'index'},
-      plugins:{legend:{labels:{color:'#4a4f63',font:{size:11,family:'Inter'},usePointStyle:true,padding:12}},
-        tooltip:{backgroundColor:'#fff',titleColor:'#1a1d27',bodyColor:'#4a4f63',borderColor:'#d8dbe4',borderWidth:1,padding:12,titleFont:{weight:'700'},
-          callbacks:{
-            label:function(ctx){return' '+ctx.dataset.label+': '+nf(ctx.raw)+' und';},
-            afterBody:function(items){const i=items[0].dataIndex;const mi=mesesInv[i];if(mi!=null)return[' ','  Meses Inv: '+mi.toFixed(1)];return[];}
-          }}},
-      scales:{x:{ticks:{color:'#7a7f94',font:{size:11}},grid:{color:'#ebedf2'}},y:{ticks:{color:'#7a7f94',font:{size:10}},grid:{color:'#ebedf2'}}}}
-  });
-}
-
-Chart.defaults.backgroundColor='transparent';Chart.defaults.borderColor='#ebedf2';Chart.defaults.color='#4a4f63';Chart.defaults.font.family='Inter';
-initFilters();refresh();
-</script>
-<div class="img-tooltip" id="img-tooltip"><img id="img-tt-img" src="" alt=""></div>
-</body>
-</html>
+      {label:'Inv Final c/ Bodega',data:invFin,type:'line',borderColor:'#ffa726',backgr
