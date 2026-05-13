@@ -497,8 +497,10 @@ function updComp(f){const ano=f.ano;
   // Canal: uses kpi_canal_month + D.bodega para inventario BODEGA
   let ck=D.kpi_canal_month.filter(r=>r.ano===ano&&r.canal!=='TOTAL'&&r.canal!=='BODEGA'&&mm(r.mes));
   if(f.canal!=='all'&&f.canal!=='BODEGA')ck=ck.filter(r=>r.canal===f.canal);
-  const cvu={},civ={};ck.forEach(r=>{if(!cvu[r.canal])cvu[r.canal]=0;cvu[r.canal]+=r.und||0;if(!civ[r.canal])civ[r.canal]=0;civ[r.canal]+=r.inv||0;});
-  // Agregar BODEGA desde D.bodega (solo inventario, venta=0)
+  const cvu={};ck.forEach(r=>{if(!cvu[r.canal])cvu[r.canal]=0;cvu[r.canal]+=r.und||0;});
+  // FIX Canal inv: sum from invData (already scaled by all active filters)
+  const civ={};invData.forEach(r=>{if(!civ[r.canal])civ[r.canal]=0;civ[r.canal]+=r.inv||0;});
+  // BODEGA: sin desglose cat/gen, se muestra sin escalar
   if(f.canal==='all'||f.canal==='BODEGA'){
     const bodInv=D.bodega.filter(r=>r.ano===ano&&mm(r.mes)).reduce((s,r)=>s+(r.inv||0),0);
     if(bodInv>0){cvu['BODEGA']=cvu['BODEGA']||0;civ['BODEGA']=(civ['BODEGA']||0)+bodInv;}}
@@ -511,12 +513,20 @@ function updComp(f){const ano=f.ano;
   buildCompTable('comp-tbl-tipo',agV(vtaData,r=>r.tipo),invByVtaDimProp(r=>r.tipo));
   buildCompTable('comp-tbl-origen',agV(vtaData,r=>r.origen),invByVtaDimProp(r=>r.origen));
   buildCompTable('comp-tbl-precio',agV(vtaData,r=>r.precio),invByVtaDimProp(r=>r.precio));
-  // Año Temporada — top 15 by venta, inventario desde D.inv_temp
+  // Año Temporada — top 15 by venta; inv_temp scaled by invData ratio per (canal+mes)
   (function(){
     const vData=agV(vtaData,r=>r.temp).slice(0,15);
     const top15=new Set(vData.map(([k])=>k));
     let itd=D.inv_temp.filter(r=>r.ano===ano&&mm(r.mes));
     if(f.canal!=='all')itd=itd.filter(r=>r.canal===f.canal);
+    if(f.genero!=='all'||f.categoria!=='all'||f.tipo!=='all'||f.precio!=='all'||f.origen!=='all'){
+      const filtTot={},allTot={};
+      invData.forEach(r=>{const gk=r.canal+'|'+r.mes;filtTot[gk]=(filtTot[gk]||0)+(r.inv||0);});
+      let baseAll=D.inv_catgen.filter(r=>r.ano===ano&&mm(r.mes));
+      if(f.canal!=='all')baseAll=baseAll.filter(r=>r.canal===f.canal);
+      baseAll.forEach(r=>{const gk=r.canal+'|'+r.mes;allTot[gk]=(allTot[gk]||0)+(r.inv||0);});
+      itd=itd.map(r=>{const gk=r.canal+'|'+r.mes;const ratio=allTot[gk]>0?(filtTot[gk]||0)/allTot[gk]:0;return Object.assign({},r,{inv:(r.inv||0)*ratio});});
+    }
     const iData=agInv(itd,r=>r.temp).filter(([k])=>top15.has(k));
     buildCompTable('comp-tbl-temporada',vData,iData);
   })();}
