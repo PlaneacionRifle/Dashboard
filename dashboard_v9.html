@@ -465,11 +465,16 @@ function updComp(f){const ano=f.ano;
   }
   const invData=getScaledInv();
   // FIX: distribute inv proportionally by venta dim (for tipo/precio/origen tables)
+  // BODEGA no tiene ventas -> usar proporciones globales de vtaData
   function invByVtaDimProp(keyFn){
     const vdm={},vtm={};
     vtaData.forEach(r=>{const gk=r.canal+'|'+r.cat+'|'+r.gen;const dk=keyFn(r);if(!dk)return;if(!vdm[gk])vdm[gk]={};vdm[gk][dk]=(vdm[gk][dk]||0)+(r.und||0);vtm[gk]=(vtm[gk]||0)+(r.und||0);});
+    const totDim={};let totAll=0;
+    vtaData.forEach(r=>{const dk=keyFn(r);if(!dk)return;totDim[dk]=(totDim[dk]||0)+(r.und||0);totAll+=(r.und||0);});
     const res={};
-    invData.forEach(r=>{const gk=r.canal+'|'+r.cat+'|'+r.gen;const inv=r.inv||0;const dims=vdm[gk];const tot=vtm[gk]||0;if(dims&&tot>0){Object.entries(dims).forEach(([dk,vv])=>{res[dk]=(res[dk]||0)+inv*vv/tot;});}});
+    invData.forEach(r=>{const gk=r.canal+'|'+r.cat+'|'+r.gen;const inv=r.inv||0;const dims=vdm[gk];const tot=vtm[gk]||0;
+      if(dims&&tot>0){Object.entries(dims).forEach(([dk,vv])=>{res[dk]=(res[dk]||0)+inv*vv/tot;});}
+      else if(inv>0&&totAll>0){Object.entries(totDim).forEach(([dk,dv])=>{res[dk]=(res[dk]||0)+inv*dv/totAll;});}});
     return Object.entries(res).sort((a,b)=>b[1]-a[1]);
   }
   function agU(arr){const m={};arr.forEach(r=>{if(!m[r.dim])m[r.dim]=0;m[r.dim]+=r.und||0;});return Object.entries(m).sort((a,b)=>b[1]-a[1]);}
@@ -500,10 +505,7 @@ function updComp(f){const ano=f.ano;
   const cvu={};ck.forEach(r=>{if(!cvu[r.canal])cvu[r.canal]=0;cvu[r.canal]+=r.und||0;});
   // FIX Canal inv: sum from invData (already scaled by all active filters)
   const civ={};invData.forEach(r=>{if(!civ[r.canal])civ[r.canal]=0;civ[r.canal]+=r.inv||0;});
-  // BODEGA: sin desglose cat/gen, se muestra sin escalar
-  if(f.canal==='all'||f.canal==='BODEGA'){
-    const bodInv=D.bodega.filter(r=>r.ano===ano&&mm(r.mes)).reduce((s,r)=>s+(r.inv||0),0);
-    if(bodInv>0){cvu['BODEGA']=cvu['BODEGA']||0;civ['BODEGA']=(civ['BODEGA']||0)+bodInv;}}
+  // BODEGA ya incluida en invData via D.inv_catgen (no sumar de D.bodega — evita doble conteo)
   buildCompTable('comp-tbl-canal',Object.entries(cvu).sort((a,b)=>b[1]-a[1]),Object.entries(civ).sort((a,b)=>b[1]-a[1]));
   // Género — uses by_cat_gen + inv_catgen (responds to all filters)
   buildCompTable('comp-tbl-gen',agV(vtaData,r=>r.gen),agInv(invData,r=>r.gen));
