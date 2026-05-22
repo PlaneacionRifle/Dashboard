@@ -502,7 +502,10 @@ const COLICONS={'2-2025':'🌊','3-2025':'🌿','9-2025':'🍂','1-2026':'⭐','
 const PAL=['#3b82f6','#f59e0b','#10b981','#ef4444','#8b5cf6','#ec4899','#06b6d4','#f97316','#84cc16','#6366f1'];
 const THR=0.90;
 
-const state={meses:new Set(MONTHS),canales:new Set(CB),generos:new Set(['Masculino','Femenino','Unisex']),categorias:new Set([...new Set(BUDGET.map(r=>r.DESCP))]),colecciones:new Set([...new Set(ROTACION.map(r=>r.coleccion))]),paquetes:new Set(),valueFilter:''};
+// Unión de categorías: BUDGET.DESCP + ROTACION.categoria — esto incluye categorías
+// que aparecen en rotación pero NO tienen presupuesto (ej: Accesorios — código línea 6XX).
+const ALL_CATS=[...new Set([...BUDGET.map(r=>r.DESCP),...ROTACION.map(r=>r.categoria)].filter(Boolean))];
+const state={meses:new Set(MONTHS),canales:new Set(CB),generos:new Set(['Masculino','Femenino','Unisex']),categorias:new Set(ALL_CATS),colecciones:new Set([...new Set(ROTACION.map(r=>r.coleccion))]),paquetes:new Set(),valueFilter:''};
 
 const fmtM=v=>{if(!v||isNaN(v))return '$0';const a=Math.abs(v);if(a>=1e9)return '$'+(v/1e9).toFixed(1)+'MM';if(a>=1e6)return '$'+(v/1e6).toFixed(1)+'M';if(a>=1e3)return '$'+(v/1e3).toFixed(0)+'K';return '$'+Math.round(v);};
 const fmt$=fmtM;
@@ -2025,7 +2028,9 @@ window.addEventListener('load',()=>{
   buildCanalBtns();
   buildGeneroBtns();
   buildValueBtns();
-  const cats=[...new Set(BUDGET.map(r=>r.DESCP))].sort();
+  // Mismo set ALL_CATS que el state inicial — categorías de BUDGET + ROTACION
+  // (incluye Accesorios y cualquier categoría sin presupuesto de venta)
+  const cats=[...ALL_CATS].sort();
   buildDD('ddm-cat','ddt-cat','ddl-cat',cats,'categorias',v=>(CATICONS[v]||'🏷️')+' '+v);
   const sortCols=(a,b)=>{const pa=a.split('-'),pb=b.split('-');const ya=+pa[pa.length-1],yb=+pb[pb.length-1];if(ya!==yb)return yb-ya;return +pb[0]-+pa[0];};const cols=[...new Set(ROTACION.map(r=>r.coleccion))].sort(sortCols);
   buildDD('ddm-col','ddt-col','ddl-col',cols,'colecciones',v=>(COLICONS[v]||'🎨')+' '+v, ()=>rebuildPaqDD());
@@ -2141,22 +2146,4 @@ window.addEventListener('load',()=>{
     const tip = wrap.querySelector('.ref-foto-tooltip');
     if(!tip) return;
 
-    const isOpen = tip.style.getPropertyValue('display') === 'block';
-
-    // Cerrar el anterior si es diferente
-    if(currentTip && currentTip !== tip){ hideTip(currentTip); }
-
-    if(isOpen){
-      hideTip(tip);
-      currentTip = null;
-    } else {
-      placeTip(tip, wrap);
-      showTip(tip);
-      currentTip = tip;
-    }
-    e.preventDefault();
-  }, {passive:false});
-})();
-</script>
-</body>
-</html>
+    const is
