@@ -901,7 +901,7 @@ function rT2(){
               `📊 Cumplimiento: ${ctx.parsed.y}%`,
               `🔄 Rot. Real: ${fmtP(d.rotRd)}  /  Ideal: ${fmtP(d.rotId)}`,
               `📅 ${Math.round(d.diasCol)} días promedio en tienda`,
-              `📦 Vendidas: ${fmtN(d.ven)} und  ·  Inv: ${fmtN(d.ing)} und`,
+              `📦 Vendidas: ${fmtN(d.ven)} und  ·  Ingreso (compra): ${fmtN(d.ing)} und`,
             ];
           }
         }}
@@ -1204,7 +1204,7 @@ function rT3(){
             `📊 Cumpl. Rotación: ${ctx.parsed.x}%`,
             `🔄 Rot. Real: ${fmtP(rotR)}  /  Ideal: ${fmtP(rotI)}`,
             `📅 ${Math.round(dias)} días promedio en tienda`,
-            `📦 Vendidas: ${fmtN(r.venta)} und  ·  Inv: ${fmtN(r.ingreso)} und`,
+            `📦 Vendidas: ${fmtN(r.venta)} und  ·  Ingreso (compra): ${fmtN(r.ingreso)} und`,
           ];
         }
       }}},
@@ -1231,7 +1231,7 @@ function rT3(){
             `📊 Cumpl. Rotación: ${Math.round(cumplOf(r)*100)}%`,
             `🔄 Rot. Real: ${fmtP(rotR)}  /  Ideal: ${fmtP(rotI)}`,
             `📅 ${Math.round(dias)} días promedio en tienda`,
-            `📦 Vendidas: ${fmtN(r.venta)} und  ·  Inv: ${fmtN(r.ingreso)} und`,
+            `📦 Vendidas: ${fmtN(r.venta)} und  ·  Ingreso (compra): ${fmtN(r.ingreso)} und`,
           ];
         }
       }}},
@@ -1260,7 +1260,7 @@ function rT3(){
             return[
               `📊 Cumpl. Rotación: ${ctx.parsed.y}%`,
               `🔄 Rot. Real: ${fmtP(rotR)}  /  Ideal: ${fmtP(rotI)}`,
-              `📦 Vendidas: ${fmtN(f.venta)} und  ·  Inv: ${fmtN(f.ingreso)} und`,
+              `📦 Vendidas: ${fmtN(f.venta)} und  ·  Ingreso (compra): ${fmtN(f.ingreso)} und`,
               `👗 ${f.tot} referencias evaluadas`,
             ];
           }
@@ -1289,7 +1289,7 @@ function rT3(){
             const dias=r.dias.length?r.dias.reduce((x,c)=>x+c,0)/r.dias.length:0;
             const rotI=riM(dias);
             return[
-              `📦 Vendidas: ${fmtN(ctx.parsed)} und  ·  Inv: ${fmtN(r.ingreso)} und`,
+              `📦 Vendidas: ${fmtN(ctx.parsed)} und  ·  Ingreso (compra): ${fmtN(r.ingreso)} und`,
               `📊 Cumpl. Rotación: ${fmtP(cm)}`,
               `🔄 Rot. Real: ${fmtP(rotR)}  /  Ideal: ${fmtP(rotI)}`,
               `✅ ${r.cp} cumplen  ·  ❌ ${r.tot-r.cp} no cumplen`,
