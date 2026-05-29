@@ -1505,7 +1505,7 @@ function rT5(){
             const f=ctx.label; const b=bFit[f]; if(!b) return '';
             const d=fitDias(f); const rotRf=fitRotR(f); const rotIf=riM(d); const cm=fitCumpl(f);
             return[
-              `📦 Venta: ${fmtN(b.ven)} und  ·  Inv: ${fmtN(b.ing)} und`,
+              `📦 Venta: ${fmtN(b.ven)} und  ·  Ingreso (compra): ${fmtN(b.ing)} und`,
               `📊 Cumpl. Rotación: ${Math.round(cm*100)}%`,
               `🔄 Rot. Real: ${fmtP(rotRf)}  /  Ideal: ${fmtP(rotIf)}`,
               `📅 ${Math.round(d)} días promedio en tienda`,
