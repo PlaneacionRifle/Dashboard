@@ -998,7 +998,7 @@ function rT2(){
         `<div class="ref-foto-wrap">
           ${shortRef}
           <div class="ref-foto-tooltip" style="width:192px">
-            <img src="${fotoUrl}" alt="${rf.referencia}" onerror="this.parentElement.innerHTML='<div style=\\'width:180px;height:180px;display:flex;align-items:center;justify-content:center;color:#999;font-size:11px;text-align:center\\'>Sin foto<br>disponible</div>'">
+            <img loading="lazy" decoding="async" src="${fotoUrl}" alt="${rf.referencia}" onerror="this.parentElement.innerHTML='<div style=\\'width:180px;height:180px;display:flex;align-items:center;justify-content:center;color:#999;font-size:11px;text-align:center\\'>Sin foto<br>disponible</div>'">
             <div class="foto-lbl">${rf.referencia}</div>
           </div>
         </div>` : shortRef;
@@ -1549,7 +1549,7 @@ function rT5(){
       const refCell=fotoUrl?
         `<div class="ref-foto-wrap">${shortRef2}
           <div class="ref-foto-tooltip" style="width:192px">
-            <img src="${fotoUrl}" alt="${rf.referencia}" onerror="this.parentElement.innerHTML='<div style=\\'width:180px;height:180px;display:flex;align-items:center;justify-content:center;color:#999;font-size:11px;text-align:center\\'>Sin foto<br>disponible</div>'">
+            <img loading="lazy" decoding="async" src="${fotoUrl}" alt="${rf.referencia}" onerror="this.parentElement.innerHTML='<div style=\\'width:180px;height:180px;display:flex;align-items:center;justify-content:center;color:#999;font-size:11px;text-align:center\\'>Sin foto<br>disponible</div>'">
             <div class="foto-lbl">${rf.referencia}</div>
           </div>
         </div>`:shortRef2;
@@ -1655,7 +1655,7 @@ function rT6(){
     const refCell=fotoUrl?
       `<div class="ref-foto-wrap">${shortRef3}
         <div class="ref-foto-tooltip" style="width:192px">
-          <img src="${fotoUrl}" alt="${r.referencia}" onerror="this.parentElement.innerHTML='<div style=\\'width:180px;height:180px;display:flex;align-items:center;justify-content:center;color:#999;font-size:11px;text-align:center\\'>Sin foto<br>disponible</div>'">
+          <img loading="lazy" decoding="async" src="${fotoUrl}" alt="${r.referencia}" onerror="this.parentElement.innerHTML='<div style=\\'width:180px;height:180px;display:flex;align-items:center;justify-content:center;color:#999;font-size:11px;text-align:center\\'>Sin foto<br>disponible</div>'">
           <div class="foto-lbl">${r.referencia}</div>
         </div>
       </div>`:shortRef3;
