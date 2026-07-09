@@ -1,0 +1,643 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Informe de Compra Consolidado · GCO</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<style>
+  :root{
+    --tinta:#1E2A38; --tinta-2:#2C3A4A;
+    --papel:#FAF9F6; --superficie:#FFFFFF;
+    --linea:#E4E1D9; --linea-fuerte:#CFCBC0;
+    --texto:#1E2A38; --texto-2:#6B7280; --texto-3:#9AA0A8;
+    --acento:#14564A; --acento-tint:#E7F0ED;
+    --ok-dot:#2F8F76;
+    --pend:#A9762B; --pend-tint:#F6EEDE; --pend-dot:#C68A33;
+    --usd:#2E5A88; --usd-tint:#E6EEF6;
+    --cop:#5A5346; --cop-tint:#F0ECE3;
+    --demo:#9A3B2E; --demo-tint:#F7E9E5;
+    --r:6px;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{background:var(--papel);color:var(--texto);
+    font-family:"Inter",system-ui,-apple-system,sans-serif;font-size:15px;line-height:1.5;
+    -webkit-font-smoothing:antialiased;}
+  .num{font-family:"IBM Plex Mono",monospace;font-variant-numeric:tabular-nums;}
+  .wrap{max-width:1600px;margin:0 auto;padding:0 32px;}
+
+  .demo-banner{background:var(--demo-tint);border-bottom:1px solid #E7C9C2;color:var(--demo);
+    font-size:12.5px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;text-align:center;padding:8px 16px;}
+  .demo-banner[hidden]{display:none;}
+
+  .masthead{border-bottom:1px solid var(--linea-fuerte);background:var(--superficie);}
+  .masthead .wrap{display:flex;align-items:center;justify-content:space-between;gap:20px;
+    padding-top:18px;padding-bottom:18px;flex-wrap:wrap;}
+  .brandmark{display:flex;align-items:center;gap:14px;}
+  .brandmark .gco{font-family:"Archivo",sans-serif;font-weight:700;font-size:22px;letter-spacing:.14em;color:var(--tinta);}
+  .brandmark .sep{width:1px;height:22px;background:var(--linea-fuerte);}
+  .brandmark .area{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;color:var(--texto-2);}
+  .stamp{font-size:12px;color:var(--texto-2);text-align:right;line-height:1.7;}
+  .stamp b{color:var(--tinta);font-weight:600;}
+
+  .hero{padding:34px 0 22px;}
+  .eyebrow{font-size:12px;font-weight:600;letter-spacing:.18em;text-transform:uppercase;color:var(--acento);margin:0 0 10px;}
+  .hero h1{font-family:"Archivo",sans-serif;font-weight:700;font-size:clamp(28px,4vw,40px);
+    line-height:1.08;margin:0 0 6px;letter-spacing:-.01em;color:var(--tinta);}
+  .hero .sub{color:var(--texto-2);font-size:15px;margin:0;}
+
+  .readout{display:grid;grid-template-columns:auto 1fr;gap:28px;align-items:end;margin-top:22px;
+    padding:20px 24px;background:var(--superficie);border:1px solid var(--linea);border-radius:var(--r);}
+  .readout .k{font-size:11.5px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:var(--texto-3);margin-bottom:6px;}
+  .readout .completitud .v{font-family:"IBM Plex Mono",monospace;font-size:30px;font-weight:500;color:var(--tinta);}
+  .readout .completitud .v small{font-size:16px;color:var(--texto-3);}
+  .readout .total{justify-self:end;text-align:right;}
+  .readout .total .v{font-family:"IBM Plex Mono",monospace;font-size:26px;font-weight:500;color:var(--acento);line-height:1.25;}
+  .readout .total .v .sep{color:var(--texto-3);font-size:18px;padding:0 6px;}
+  .readout .total .anio{font-size:12px;color:var(--texto-2);margin-top:2px;}
+
+  /* Filtros */
+  .filtros{margin:24px 0 0;}
+  .filtro-fila{display:flex;align-items:center;justify-content:space-between;gap:20px;flex-wrap:wrap;margin-bottom:14px;}
+  .tabs{display:inline-flex;border:1px solid var(--linea-fuerte);border-radius:var(--r);overflow:hidden;}
+  .tabs button{font-family:"Archivo",sans-serif;font-weight:600;font-size:14px;border:0;background:var(--superficie);
+    color:var(--texto-2);padding:9px 18px;cursor:pointer;border-right:1px solid var(--linea);transition:background .15s,color .15s;}
+  .tabs button:last-child{border-right:0;}
+  .tabs button[aria-selected="true"]{background:var(--tinta);color:#fff;}
+  .tabs button:focus-visible,.seg button:focus-visible{outline:2px solid var(--acento);outline-offset:-2px;}
+
+  .grupo-control{display:inline-flex;align-items:center;gap:10px;font-size:13px;color:var(--texto-2);}
+  .seg{display:inline-flex;border:1px solid var(--linea-fuerte);border-radius:var(--r);overflow:hidden;}
+  .seg button{border:0;background:var(--superficie);color:var(--texto-2);font-family:"Inter";font-weight:600;
+    font-size:13px;padding:8px 14px;cursor:pointer;border-right:1px solid var(--linea);transition:background .15s,color .15s;}
+  .seg button:last-child{border-right:0;}
+  .seg button[aria-pressed="true"]{background:var(--acento-tint);color:var(--acento);}
+
+  /* Multiselector de marca */
+  .chips-wrap{background:var(--superficie);border:1px solid var(--linea);border-radius:var(--r);padding:14px 16px;}
+  .chips-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;}
+  .chips-head .lbl{font-size:11.5px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:var(--texto-3);}
+  .chips-head .acciones button{border:0;background:none;color:var(--acento);font:inherit;font-size:12.5px;font-weight:600;
+    cursor:pointer;padding:2px 8px;border-radius:4px;}
+  .chips-head .acciones button:hover{background:var(--acento-tint);}
+  .chips{display:flex;flex-wrap:wrap;gap:8px;}
+  .chip{display:inline-flex;align-items:center;gap:8px;border:1px solid var(--linea-fuerte);border-radius:24px;
+    padding:7px 13px;cursor:pointer;user-select:none;background:var(--papel);transition:border-color .15s,background .15s;font-size:13.5px;}
+  .chip:hover{border-color:var(--acento);}
+  .chip input{position:absolute;opacity:0;width:0;height:0;}
+  .chip .box{width:15px;height:15px;border:1.5px solid var(--linea-fuerte);border-radius:4px;display:inline-flex;align-items:center;justify-content:center;flex:0 0 auto;}
+  .chip[data-sel="true"]{background:var(--acento-tint);border-color:var(--acento);}
+  .chip[data-sel="true"] .box{background:var(--acento);border-color:var(--acento);}
+  .chip[data-sel="true"] .box::after{content:"";width:8px;height:8px;border-radius:1px;background:#fff;}
+  .chip .nombre{font-weight:500;color:var(--tinta);}
+  .chip .dot{width:7px;height:7px;border-radius:50%;flex:0 0 auto;}
+  .dot.ok{background:var(--ok-dot);} .dot.pend{background:var(--pend-dot);}
+  .badge{font-family:"IBM Plex Mono",monospace;font-size:10.5px;font-weight:500;letter-spacing:.04em;
+    padding:2px 6px;border-radius:4px;}
+  .badge.cop{background:var(--cop-tint);color:var(--cop);}
+  .badge.usd{background:var(--usd-tint);color:var(--usd);}
+
+  /* Tabla */
+  .panel{background:var(--superficie);border:1px solid var(--linea);border-radius:var(--r);overflow-x:auto;overflow-y:hidden;margin-top:16px;}
+  table{width:100%;border-collapse:collapse;min-width:820px;}
+  thead th{font-family:"Archivo",sans-serif;font-weight:600;font-size:12px;letter-spacing:.08em;text-transform:uppercase;
+    color:var(--texto-2);text-align:right;padding:14px 18px;border-bottom:1px solid var(--linea-fuerte);background:#FCFBF8;}
+  thead th.marca-col{text-align:left;}
+  tbody td{padding:13px 18px;border-bottom:1px solid var(--linea);text-align:right;
+    font-family:"IBM Plex Mono",monospace;font-variant-numeric:tabular-nums;font-size:14px;}
+  tbody td.marca-col{text-align:left;font-family:"Inter";font-weight:600;font-size:14.5px;color:var(--tinta);}
+  .marca-cell{display:flex;align-items:center;gap:10px;}
+  tbody td.total-col{font-weight:500;color:var(--tinta);background:#FCFBF8;}
+  tbody tr.pendiente td{color:var(--texto-3);}
+  .pend-tag{font-family:"Inter";font-size:12.5px;font-weight:600;color:var(--pend);background:var(--pend-tint);
+    padding:3px 10px;border-radius:20px;}
+  /* fila de cabecera de marca (modo segmento) */
+  tbody tr.grupo td{background:var(--tinta);color:#fff;font-family:"Archivo";font-weight:600;
+    font-size:13px;letter-spacing:.04em;padding:11px 18px;text-align:left;}
+  tbody tr.grupo .marca-cell{color:#fff;}
+  tbody tr.seg-row td{font-size:13.5px;color:var(--texto-2);}
+  tbody tr.seg-row td.marca-col{font-weight:500;color:var(--tinta-2);padding-left:30px;}
+  tbody tr.subtotal td{border-top:1px solid var(--linea-fuerte);background:#FCFBF8;font-weight:500;color:var(--tinta);}
+  tbody tr.subtotal td.marca-col{font-family:"Archivo";font-size:12px;text-transform:uppercase;letter-spacing:.06em;color:var(--texto-2);}
+  tfoot td{padding:15px 18px;border-top:2px solid var(--linea-fuerte);font-family:"IBM Plex Mono",monospace;
+    font-variant-numeric:tabular-nums;font-size:14.5px;font-weight:500;text-align:right;color:var(--tinta);background:#FCFBF8;}
+  tfoot td.marca-col{text-align:left;font-family:"Archivo",sans-serif;font-weight:600;text-transform:uppercase;
+    letter-spacing:.06em;font-size:12px;color:var(--texto-2);}
+
+  .vacio{padding:40px 18px;text-align:center;color:var(--texto-3);font-size:14px;}
+
+  .footnotes{margin:22px 0 60px;color:var(--texto-2);font-size:13px;}
+  .legend{display:flex;gap:22px;flex-wrap:wrap;align-items:center;margin-bottom:14px;}
+  .legend span{display:inline-flex;align-items:center;gap:8px;}
+  .legend .dot{width:8px;height:8px;}
+  .nota-pend{color:var(--pend);}
+  .meta-line{border-top:1px solid var(--linea);padding-top:14px;line-height:1.9;}
+  .meta-line b{color:var(--tinta);font-weight:600;}
+
+  .readout .total .var{font-size:12px;color:#5A6B7A;margin-top:4px;font-family:"IBM Plex Mono",monospace;line-height:1.5;}
+  .readout .total .cons{font-size:13px;margin-top:8px;padding-top:8px;border-top:1px dashed var(--linea-fuerte);
+    color:var(--tinta);font-family:"IBM Plex Mono",monospace;font-weight:500;}
+  .trm{width:96px;font-family:"IBM Plex Mono",monospace;font-size:13.5px;text-align:right;
+    border:1px solid var(--linea-fuerte);border-radius:var(--r);padding:7px 10px;background:var(--superficie);color:var(--tinta);}
+  .trm:focus-visible{outline:2px solid var(--acento);outline-offset:-1px;}
+  tfoot tr.cons-row td{background:var(--acento-tint);}
+  tfoot tr.cons-row td.marca-col{color:var(--acento);}
+
+  .qval{line-height:1.3;white-space:nowrap;}
+  .qvar,.tvar{font-size:11px;margin-top:3px;font-family:"IBM Plex Mono",monospace;line-height:1.4;color:#8A929C;white-space:nowrap;}
+  .qvar.var-up,.tvar.var-up,.v-pos{color:#1E7D4F;}
+  .qvar.var-down,.tvar.var-down,.v-neg{color:#C0392B;}
+  .qvar.var-flat,.tvar.var-flat,.v-flat{color:#8A929C;}
+  .qvar.var-up::before,.tvar.var-up::before{content:"▲ ";font-size:8px;}
+  .qvar.var-down::before,.tvar.var-down::before{content:"▼ ";font-size:8px;}
+  .chk{display:inline-flex;align-items:center;gap:7px;font-size:13px;color:var(--texto-2);cursor:pointer;user-select:none;}
+  .chk input{width:15px;height:15px;accent-color:var(--acento);cursor:pointer;}
+
+  @media (max-width:720px){
+    .wrap{padding:0 16px;}
+    .readout{grid-template-columns:1fr;gap:18px;}
+    .readout .total{justify-self:start;text-align:left;}
+    thead th,tbody td,tfoot td{padding:11px 10px;font-size:12.5px;}
+    .filtro-fila{flex-direction:column;align-items:stretch;}
+  }
+  @media (prefers-reduced-motion:reduce){*{transition:none!important;}}
+</style>
+</head>
+<body>
+
+<div class="demo-banner" id="demoBanner" hidden>Vista preliminar · datos de ejemplo, no reales</div>
+
+<header class="masthead">
+  <div class="wrap">
+    <div class="brandmark">
+      <span class="gco">GCO</span><span class="sep"></span>
+      <span class="area">Planeación · Compras</span>
+    </div>
+    <div class="stamp" id="stamp"></div>
+  </div>
+</header>
+
+<main class="wrap">
+  <section class="hero">
+    <p class="eyebrow">Junta directiva</p>
+    <h1 id="titulo">Informe de Compra Consolidado</h1>
+    <p class="sub" id="subtitulo"></p>
+
+    <div class="readout">
+      <div class="completitud">
+        <div class="k">Marcas reportadas</div>
+        <div class="v"><span id="repN">0</span><small>/<span id="repTotal">6</span></small></div>
+      </div>
+      <div class="total">
+        <div class="k">Total compra · <span id="medidaTotalLabel">Costo</span></div>
+        <div class="v num" id="totalAnio">—</div>
+        <div class="anio" id="totalAnioNota"></div>
+        <div class="var" id="totalVar"></div>
+        <div class="cons" id="totalCons"></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="filtros">
+    <div class="filtro-fila">
+      <div class="tabs" id="tabsAnios" role="tablist" aria-label="Año"></div>
+      <div style="display:flex;gap:22px;flex-wrap:wrap;align-items:center;">
+        <div class="grupo-control"><span>Vista</span>
+          <div class="seg" id="segVista"></div>
+        </div>
+        <div class="grupo-control"><span>Medida</span>
+          <div class="seg" id="segMedidas"></div>
+        </div>
+        <div class="grupo-control"><span>Indicadores</span>
+          <label class="chk"><input type="checkbox" id="chkPct" checked /> % var</label>
+          <label class="chk"><input type="checkbox" id="chkDif" checked /> dif año ant</label>
+          <label class="chk"><input type="checkbox" id="chkQTrim" checked /> por trimestre</label>
+        </div>
+        <div class="grupo-control"><span>Ver todo en</span>
+          <div class="seg" id="segMoneda"></div>
+        </div>
+        <div class="grupo-control"><span>TRM USD↔COP</span>
+          <input type="number" id="trmInput" class="trm" value="3800" min="0" step="50" inputmode="numeric" />
+        </div>
+      </div>
+    </div>
+
+    <div class="chips-wrap">
+      <div class="chips-head">
+        <span class="lbl">Marcas</span>
+        <div class="acciones">
+          <button id="selTodas" type="button">Todas</button>
+          <button id="selNinguna" type="button">Ninguna</button>
+        </div>
+      </div>
+      <div class="chips" id="chips"></div>
+    </div>
+  </section>
+
+  <div class="panel">
+    <table id="tabla" class="show-qvar">
+      <thead id="thead"></thead>
+      <tbody id="tbody"></tbody>
+      <tfoot id="tfoot"></tfoot>
+    </table>
+  </div>
+
+  <div class="footnotes">
+    <div class="legend">
+      <span><span class="dot ok"></span> Diligenciado</span>
+      <span><span class="dot pend"></span> Pendiente</span>
+      <span><span class="badge cop">COP</span> Pesos</span>
+      <span><span class="badge usd">USD</span> Dólares</span>
+    </div>
+    <p class="nota-pend" id="notaPend"></p>
+    <div class="meta-line" id="metaLine"></div>
+  </div>
+</main>
+
+<script>
+  /* DATA_EMBED_START — el build reemplaza este bloque con los datos reales */
+  const DEMO = {
+    meta:{titulo:"Informe de Compra Consolidado",subtitulo:"Plan de compra por trimestre · 2/6 marcas",moneda:"COP",monedas:["COP"],anios:["2025","2026","2027"],anioActivo:"2026",generado:"—",fuenteModificada:"—",totalMarcas:6,esDemo:true},
+    medidas:[{id:"costo",label:"Costo",tipo:"moneda"},{id:"unidades",label:"Unidades",tipo:"entero"}],
+    trimestres:["Q1","Q2","Q3","Q4"],
+    marcas:[
+      {nombre:"Marca A",estado:"completo",moneda:"COP",segmentos:["ICONICO","MODA"],valores:{"2026":{Q1:{TOTAL:{costo:14000000000,unidades:370000},ICONICO:{costo:6000000000,unidades:160000},MODA:{costo:8000000000,unidades:210000}},Q2:{TOTAL:{costo:20000000000,unidades:490000},ICONICO:{costo:9000000000,unidades:210000},MODA:{costo:11000000000,unidades:280000}},Q3:{TOTAL:{costo:20000000000,unidades:457000},ICONICO:{costo:9500000000,unidades:210000},MODA:{costo:10500000000,unidades:247000}},Q4:{TOTAL:{costo:19000000000,unidades:418000},ICONICO:{costo:8000000000,unidades:180000},MODA:{costo:11000000000,unidades:238000}}}}},
+      {nombre:"Marca B",estado:"completo",moneda:"USD",segmentos:["CARRY OVER","MODA"],valores:{"2026":{Q1:{TOTAL:{costo:3500000,unidades:90000},"CARRY OVER":{costo:1500000,unidades:40000},MODA:{costo:2000000,unidades:50000}},Q2:{TOTAL:{costo:4200000,unidades:110000},"CARRY OVER":{costo:1800000,unidades:48000},MODA:{costo:2400000,unidades:62000}},Q3:{TOTAL:{costo:null,unidades:null}},Q4:{TOTAL:{costo:null,unidades:null}}}}},
+      {nombre:"Marca C",estado:"pendiente",moneda:"COP",segmentos:["BASICOS","MODA"],valores:{}}
+    ]
+  };
+  /* DATA_EMBED_END */
+
+  let DATA=null, medidaActiva=null, anioActivo=null, vista="consolidado";
+  let seleccion=new Set();
+  let showPct=true, showDif=true, showQTrim=true;
+  let trm=3800;
+  let monedaVista="COP";   // moneda en la que se muestra TODO el reporte (COP o USD)
+
+  // Convierte un valor monetario de su moneda nativa a la moneda de visualización.
+  function conv(vNativo, nativa){
+    if(vNativo===null||vNativo===undefined) return null;
+    const enCOP = (nativa==="USD") ? vNativo*trm : vNativo;    // USD -> COP
+    if(monedaVista==="USD") return (trm>0) ? enCOP/trm : null; // COP -> USD
+    return enCOP;
+  }
+
+  const esCO=new Intl.NumberFormat("es-CO",{maximumFractionDigits:0}); // punto como separador de miles
+  const fmtUnidades=n=>esCO.format(Math.round(n));
+  function fmtMoneda(n,moneda){
+    const r=esCO.format(Math.round(n));   // punto de miles para COP y USD
+    return moneda==="USD" ? "US$ "+r : "$ "+r;
+  }
+  // ---- catálogo de medidas (incluye Costo promedio derivado) ----
+  function medidasUI(){
+    const base=DATA.medidas.map(m=>({id:m.id,label:m.label,tipo:m.tipo}));
+    base.push({id:"costoprom",label:"Ticket promedio de compra",tipo:"moneda",perUnidad:true});
+    return base;
+  }
+  function medidaObj(id){return medidasUI().find(m=>m.id===id);}
+  function esMonetaria(med){return med.tipo==="moneda";}
+  function fmtMedida(v,med,moneda){
+    if(v===null||v===undefined) return "—";
+    if(med.tipo==="moneda") return fmtMoneda(v,moneda)+(med.perUnidad?" /u":"");
+    return fmtUnidades(v);
+  }
+
+  function reportadaEnAnioX(m,anio){return m.estado==="completo" && m.valores && m.valores[anio];}
+  function reportadaEnAnio(m){return reportadaEnAnioX(m,anioActivo);}
+  function rawNivelEn(m,anio,q,nivel,medId){
+    const c=m.valores[anio] && m.valores[anio][q] && m.valores[anio][q][nivel];
+    if(!c) return null;
+    const x=c[medId];
+    return (x===null||x===undefined)?null:x;
+  }
+  function rawTotalEn(m,anio,nivel,medId){
+    let t=null;
+    DATA.trimestres.forEach(q=>{const v=rawNivelEn(m,anio,q,nivel,medId); if(v!==null){t=(t||0)+v;}});
+    return t;
+  }
+  // valor de una marca en la MEDIDA elegida y la MONEDA DE VISTA
+  function cellVal(m,anio,q,nivel,medId){
+    if(medId==="unidades") return rawNivelEn(m,anio,q,nivel,"unidades");
+    if(medId==="costoprom"){
+      const c=rawNivelEn(m,anio,q,nivel,"costo"), u=rawNivelEn(m,anio,q,nivel,"unidades");
+      if(c===null||u===null||u===0) return null;
+      const cv=conv(c,m.moneda); return cv===null?null:cv/u;
+    }
+    return conv(rawNivelEn(m,anio,q,nivel,"costo"), m.moneda);   // costo
+  }
+  function annualVal(m,anio,nivel,medId){
+    if(medId==="unidades") return rawTotalEn(m,anio,nivel,"unidades");
+    if(medId==="costoprom"){
+      const c=rawTotalEn(m,anio,nivel,"costo"), u=rawTotalEn(m,anio,nivel,"unidades");
+      if(c===null||u===null||u===0) return null;
+      const cv=conv(c,m.moneda); return cv===null?null:cv/u;
+    }
+    return conv(rawTotalEn(m,anio,nivel,"costo"), m.moneda);
+  }
+  // grupo: TODAS las marcas se suman ya convertidas a la moneda de vista
+  function grpCellVal(brs,anio,q,medId){
+    if(medId==="costoprom"){
+      let c=0,u=0,any=false;
+      brs.forEach(m=>{const cc=conv(rawNivelEn(m,anio,q,"TOTAL","costo"),m.moneda),uu=rawNivelEn(m,anio,q,"TOTAL","unidades");
+        if(cc!==null&&uu!==null){c+=cc;u+=uu;any=true;}});
+      return (any&&u>0)?c/u:null;
+    }
+    if(medId==="unidades"){ let s=null; brs.forEach(m=>{const v=rawNivelEn(m,anio,q,"TOTAL","unidades"); if(v!==null)s=(s||0)+v;}); return s; }
+    let s=null; brs.forEach(m=>{const v=conv(rawNivelEn(m,anio,q,"TOTAL","costo"),m.moneda); if(v!==null)s=(s||0)+v;}); return s;
+  }
+  function grpAnnualVal(brs,anio,medId){
+    if(medId==="costoprom"){
+      let c=0,u=0,any=false;
+      brs.forEach(m=>{const cc=conv(rawTotalEn(m,anio,"TOTAL","costo"),m.moneda),uu=rawTotalEn(m,anio,"TOTAL","unidades");
+        if(cc!==null&&uu!==null){c+=cc;u+=uu;any=true;}});
+      return (any&&u>0)?c/u:null;
+    }
+    if(medId==="unidades"){ let s=null; brs.forEach(m=>{const v=rawTotalEn(m,anio,"TOTAL","unidades"); if(v!==null)s=(s||0)+v;}); return s; }
+    let s=null; brs.forEach(m=>{const v=conv(rawTotalEn(m,anio,"TOTAL","costo"),m.moneda); if(v!==null)s=(s||0)+v;}); return s;
+  }
+
+  function prevAnio(){const i=DATA.meta.anios.indexOf(anioActivo); return i>0?DATA.meta.anios[i-1]:null;}
+  function varPct(a,b){ if(a===null||b===null||b===0) return null; return (a-b)/b*100; }
+  function flechaTxt(p){ if(p===null) return "—"; const f=p>0.05?"▲ ":(p<-0.05?"▼ ":""); return f+Math.abs(p).toFixed(1)+"%"; }
+  function difTxt(a,b,med,moneda){
+    if(a===null||b===null) return "Δ —";
+    const dif=a-b, s=dif>0?"+":(dif<0?"−":""), abs=Math.abs(dif);
+    const cuerpo=med.tipo==="moneda"?fmtMoneda(abs,moneda)+(med.perUnidad?" /u":""):fmtUnidades(abs);
+    return "dif año ant "+s+cuerpo;
+  }
+  // minis de comparativo (clase qvar=trimestre, tvar=anual)
+  function miniPct(a,b,clase){
+    const d=document.createElement("div"); d.className=clase;
+    const p=varPct(a,b);
+    if(p===null){d.textContent="—"; return d;}
+    d.textContent=Math.abs(p).toFixed(1)+"%";
+    d.classList.add(p>0.05?"var-up":(p<-0.05?"var-down":"var-flat"));
+    return d;
+  }
+  function miniDif(a,b,med,moneda,clase){
+    const d=document.createElement("div"); d.className=clase;
+    if(a===null||b===null){d.textContent="—"; return d;}
+    const dif=a-b, abs=Math.abs(dif);
+    const cuerpo=med.tipo==="moneda"?fmtMoneda(abs,moneda)+(med.perUnidad?" /u":""):fmtUnidades(abs);
+    d.textContent="dif año ant "+cuerpo;
+    d.classList.add(dif>0?"var-up":(dif<0?"var-down":"var-flat"));
+    return d;
+  }
+  // arma una celda: vShow = valor mostrado; (aCmp,bCmp) = par para el comparativo
+  function celdaValor(td, vShow, aCmp, bCmp, med, moneda, esTrim){
+    const dv=document.createElement("div"); dv.className="qval"; dv.textContent=fmtMedida(vShow,med,moneda); td.appendChild(dv);
+    const mostrar = esTrim ? showQTrim : true;
+    if(mostrar){
+      const clase = esTrim ? "qvar" : "tvar";
+      if(showPct) td.appendChild(miniPct(aCmp,bCmp,clase));
+      if(showDif) td.appendChild(miniDif(aCmp,bCmp,med,moneda,clase));
+    }
+  }
+
+  function init(data){
+    DATA=data;
+    medidaActiva=DATA.medidas[0].id;
+    anioActivo=DATA.meta.anioActivo||DATA.meta.anios[0];
+    seleccion=new Set(DATA.marcas.map(m=>m.nombre));
+
+    document.getElementById("demoBanner").hidden=!DATA.meta.esDemo;
+    document.getElementById("titulo").textContent=DATA.meta.titulo;
+    document.getElementById("subtitulo").textContent=DATA.meta.subtitulo||"";
+    document.getElementById("repTotal").textContent=DATA.meta.totalMarcas;
+    document.getElementById("stamp").innerHTML=
+      "Generado <b>"+DATA.meta.generado+"</b><br>Fuente modificada <b>"+DATA.meta.fuenteModificada+"</b>";
+
+    construirTabs();
+    construirSeg("segMedidas", medidasUI().map(m=>({id:m.id,label:m.label})), medidaActiva, id=>{medidaActiva=id;render();});
+    construirSeg("segVista", [{id:"consolidado",label:"Consolidado"},{id:"segmento",label:"Por segmento"}], vista, id=>{vista=id;render();});
+    construirSeg("segMoneda", [{id:"COP",label:"COP ($)"},{id:"USD",label:"USD (US$)"}], monedaVista, id=>{monedaVista=id;render();});
+    construirChips();
+
+    document.getElementById("selTodas").addEventListener("click",()=>{seleccion=new Set(DATA.marcas.map(m=>m.nombre));construirChips();render();});
+    document.getElementById("selNinguna").addEventListener("click",()=>{seleccion=new Set();construirChips();render();});
+    document.getElementById("chkPct").addEventListener("change",e=>{showPct=e.target.checked;render();});
+    document.getElementById("chkDif").addEventListener("change",e=>{showDif=e.target.checked;render();});
+    document.getElementById("chkQTrim").addEventListener("change",e=>{showQTrim=e.target.checked;render();});
+    const trmEl=document.getElementById("trmInput");
+    trm = parseFloat(trmEl.value)||0;
+    trmEl.addEventListener("input",e=>{ trm=parseFloat(e.target.value)||0; render(); });
+
+    render();
+  }
+
+  function construirTabs(){
+    const c=document.getElementById("tabsAnios"); c.innerHTML="";
+    DATA.meta.anios.forEach(a=>{
+      const b=document.createElement("button"); b.setAttribute("role","tab"); b.textContent=a;
+      b.setAttribute("aria-selected",String(a===anioActivo));
+      b.addEventListener("click",()=>{anioActivo=a;[...c.children].forEach(x=>x.setAttribute("aria-selected",String(x.textContent===a)));render();});
+      c.appendChild(b);
+    });
+  }
+
+  function construirSeg(idCont, items, activo, onPick){
+    const c=document.getElementById(idCont); c.innerHTML="";
+    items.forEach(it=>{
+      const b=document.createElement("button"); b.textContent=it.label;
+      b.setAttribute("aria-pressed",String(it.id===activo));
+      b.addEventListener("click",()=>{[...c.children].forEach(x=>x.setAttribute("aria-pressed",String(x.textContent===it.label)));onPick(it.id);});
+      c.appendChild(b);
+    });
+  }
+
+  function construirChips(){
+    const cont=document.getElementById("chips"); cont.innerHTML="";
+    DATA.marcas.forEach(m=>{
+      const sel=seleccion.has(m.nombre);
+      const lab=document.createElement("label"); lab.className="chip"; lab.dataset.sel=String(sel);
+      const cb=document.createElement("input"); cb.type="checkbox"; cb.checked=sel;
+      cb.addEventListener("change",()=>{ if(cb.checked) seleccion.add(m.nombre); else seleccion.delete(m.nombre);
+        lab.dataset.sel=String(cb.checked); render(); });
+      const box=document.createElement("span"); box.className="box";
+      const dot=document.createElement("span"); dot.className="dot "+(m.estado==="completo"?"ok":"pend");
+      const nom=document.createElement("span"); nom.className="nombre"; nom.textContent=m.nombre;
+      const bd=document.createElement("span"); bd.className="badge "+m.moneda.toLowerCase(); bd.textContent=m.moneda;
+      lab.append(cb,box,dot,nom,bd);
+      cont.appendChild(lab);
+    });
+  }
+
+  function celdaMarca(m, extraClass){
+    const td=document.createElement("td"); td.className="marca-col"+(extraClass?" "+extraClass:"");
+    const wrap=document.createElement("span"); wrap.className="marca-cell";
+    const dot=document.createElement("span"); dot.className="dot "+(reportadaEnAnio(m)?"ok":"pend");
+    wrap.appendChild(dot);
+    wrap.appendChild(document.createTextNode(m.nombre));
+    const bd=document.createElement("span"); bd.className="badge "+m.moneda.toLowerCase(); bd.textContent=m.moneda;
+    wrap.appendChild(bd);
+    td.appendChild(wrap);
+    return td;
+  }
+
+  function filaValores(m, nivel, med, opts){
+    const tr=document.createElement("tr");
+    if(opts && opts.clase) tr.className=opts.clase;
+    if(opts && opts.celdaMarca){ tr.appendChild(opts.celdaMarca); }
+    const prev=prevAnio();
+    DATA.trimestres.forEach(q=>{
+      const td=document.createElement("td");
+      const a=cellVal(m,anioActivo,q,nivel,med.id);
+      const b=prev?cellVal(m,prev,q,nivel,med.id):null;
+      celdaValor(td,a,a,b,med,monedaVista,true);
+      tr.appendChild(td);
+    });
+    const tdT=document.createElement("td"); tdT.className="total-col";
+    const at=annualVal(m,anioActivo,nivel,med.id);
+    const bt=prev?annualVal(m,prev,nivel,med.id):null;
+    celdaValor(tdT,at,at,bt,med,monedaVista,false);
+    tr.appendChild(tdT);
+    return tr;
+  }
+
+  function filaPendiente(m){
+    const tr=document.createElement("tr"); tr.className="pendiente";
+    tr.appendChild(celdaMarca(m));
+    const td=document.createElement("td"); td.colSpan=DATA.trimestres.length+1; td.style.textAlign="left";
+    const tag=document.createElement("span"); tag.className="pend-tag"; tag.textContent="Pendiente";
+    td.appendChild(tag); tr.appendChild(td);
+    return tr;
+  }
+
+  function render(){
+    const med=medidaObj(medidaActiva);
+    const qs=DATA.trimestres;
+    const visibles=DATA.marcas.filter(m=>seleccion.has(m.nombre));
+
+    const thead=document.getElementById("thead"); thead.innerHTML="";
+    const trh=document.createElement("tr");
+    const thM=document.createElement("th"); thM.className="marca-col";
+    thM.textContent = vista==="segmento" ? "Marca / Segmento" : "Marca";
+    trh.appendChild(thM);
+    qs.forEach(q=>{const th=document.createElement("th"); th.textContent=q; trh.appendChild(th);});
+    const thT=document.createElement("th"); thT.textContent="Total "+anioActivo; trh.appendChild(thT);
+    thead.appendChild(trh);
+
+    const tbody=document.getElementById("tbody"); tbody.innerHTML="";
+    const tfoot=document.getElementById("tfoot"); tfoot.innerHTML="";
+
+    if(visibles.length===0){
+      const tr=document.createElement("tr"); const td=document.createElement("td");
+      td.className="vacio"; td.colSpan=qs.length+2; td.textContent="Selecciona al menos una marca.";
+      tr.appendChild(td); tbody.appendChild(tr); actualizarResumen([], med); return;
+    }
+
+    if(vista==="consolidado"){
+      visibles.forEach(m=>{
+        if(reportadaEnAnio(m)) tbody.appendChild(filaValores(m,"TOTAL",med,{celdaMarca:celdaMarca(m)}));
+        else tbody.appendChild(filaPendiente(m));
+      });
+      construirPie(tfoot, visibles, med, qs);
+    }else{
+      visibles.forEach(m=>{
+        if(reportadaEnAnio(m)){
+          const trg=document.createElement("tr"); trg.className="grupo";
+          trg.appendChild(celdaMarca(m,""));
+          const tdv=document.createElement("td"); tdv.colSpan=qs.length+1; trg.appendChild(tdv);
+          tbody.appendChild(trg);
+          m.segmentos.forEach(s=>{
+            const tdS=document.createElement("td"); tdS.className="marca-col"; tdS.textContent=s;
+            tbody.appendChild(filaValores(m,s,med,{clase:"seg-row",celdaMarca:tdS}));
+          });
+          const tdSub=document.createElement("td"); tdSub.className="marca-col"; tdSub.textContent="Total "+m.nombre;
+          tbody.appendChild(filaValores(m,"TOTAL",med,{clase:"subtotal",celdaMarca:tdSub}));
+        }else{
+          tbody.appendChild(filaPendiente(m));
+        }
+      });
+    }
+    actualizarResumen(visibles, med);
+  }
+
+  // Pie: un solo total con TODAS las marcas reportadas, ya en la moneda de vista.
+  function filaPie(tfoot, etiqueta, grupo, comparables, med, qs, moneda){
+    const prev=prevAnio();
+    const tr=document.createElement("tr");
+    const td0=document.createElement("td"); td0.className="marca-col"; td0.textContent=etiqueta; tr.appendChild(td0);
+    qs.forEach(q=>{
+      const td=document.createElement("td");
+      const vShow=grpCellVal(grupo,anioActivo,q,med.id);
+      const aCmp=comparables.length?grpCellVal(comparables,anioActivo,q,med.id):null;
+      const bCmp=(prev&&comparables.length)?grpCellVal(comparables,prev,q,med.id):null;
+      celdaValor(td,vShow,aCmp,bCmp,med,moneda,true);
+      tr.appendChild(td);
+    });
+    const tdT=document.createElement("td");
+    const vShowT=grpAnnualVal(grupo,anioActivo,med.id);
+    const aCmpT=comparables.length?grpAnnualVal(comparables,anioActivo,med.id):null;
+    const bCmpT=(prev&&comparables.length)?grpAnnualVal(comparables,prev,med.id):null;
+    celdaValor(tdT,vShowT,aCmpT,bCmpT,med,moneda,false);
+    tr.appendChild(tdT);
+    tfoot.appendChild(tr);
+  }
+  function construirPie(tfoot, visibles, med, qs){
+    const reportadas=visibles.filter(reportadaEnAnio);
+    if(reportadas.length===0) return;
+    const prev=prevAnio();
+    const comp=reportadas.filter(m=>prev && reportadaEnAnioX(m,prev));
+    const etq = (med.id==="unidades") ? "Total unidades" : "Total "+monedaVista;
+    filaPie(tfoot, etq, reportadas, comp, med, qs, monedaVista);
+  }
+
+  function actualizarResumen(visibles, med){
+    document.getElementById("repN").textContent=DATA.marcas.filter(reportadaEnAnio).length;
+    const enMoneda = (med.id==="unidades") ? "" : " · en "+monedaVista;
+    document.getElementById("medidaTotalLabel").textContent=med.label;
+
+    const rep=visibles.filter(reportadaEnAnio);
+    const prev=prevAnio();
+    const cont=document.getElementById("totalAnio");
+    const tv=document.getElementById("totalVar");
+    const curFmt = (med.id==="unidades") ? null : monedaVista;
+
+    if(rep.length===0){ cont.textContent="—"; tv.textContent=""; }
+    else{
+      cont.textContent=fmtMedida(grpAnnualVal(rep,anioActivo,med.id),med,curFmt);
+      const comp=rep.filter(m=>reportadaEnAnioX(m,prev));
+      tv.innerHTML = comparativoTexto(comp, med, prev, curFmt);
+    }
+
+    document.getElementById("totalAnioNota").textContent="Año "+anioActivo+enMoneda+" · solo marcas reportadas y seleccionadas";
+    document.getElementById("totalCons").innerHTML="";
+
+    const pend=DATA.marcas.filter(m=>!reportadaEnAnio(m)).map(m=>m.nombre);
+    document.getElementById("notaPend").textContent= pend.length
+      ? "Sin información para "+anioActivo+" ("+pend.length+"): "+pend.join(", ")+". Excluidas de los totales."
+      : "Todas las marcas reportaron para "+anioActivo+".";
+
+    const nota = (med.id==="unidades")
+      ? "Los valores en unidades no dependen de la moneda."
+      : "Todos los valores están expresados en <b>"+monedaVista+"</b>, convertidos con TRM <b>"+esCO.format(trm)+
+        "</b> (tasa de referencia ingresada, no oficial).";
+    document.getElementById("metaLine").innerHTML=
+      "Fuente: archivo compartido OneDrive · GCO. Última modificación del dato: <b>"+DATA.meta.fuenteModificada+
+      "</b>. Reporte generado: <b>"+DATA.meta.generado+"</b>. "+nota;
+  }
+
+  function spanSign(txt, sign){
+    const cls = (sign>0.0001)?"v-pos":((sign<-0.0001)?"v-neg":"v-flat");
+    return '<span class="'+cls+'">'+txt+'</span>';
+  }
+  function comparativoTexto(comp, med, prev, curFmt){
+    if(!prev || (!showPct && !showDif)) return "";
+    if(!comp.length) return "vs "+prev+':  <span class="v-flat">s/ base</span>';
+    const a=grpAnnualVal(comp,anioActivo,med.id), b=grpAnnualVal(comp,prev,med.id);
+    const segs=[];
+    if(showPct){ const p=varPct(a,b); segs.push(spanSign(flechaTxt(p), p===null?0:p)); }
+    if(showDif){ const dif=(a===null||b===null)?null:(a-b); segs.push(spanSign(difTxt(a,b,med,curFmt), dif===null?0:dif)); }
+    return "vs "+prev+":  "+segs.join("  ");
+  }
+
+  fetch("./data.json",{cache:"no-store"})
+    .then(r=>{if(!r.ok)throw new Error("sin data.json");return r.json();})
+    .then(d=>init(d)).catch(()=>init(DEMO));
+</script>
+</body>
+</html>
