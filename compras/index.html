@@ -147,12 +147,9 @@
   tfoot tr.cons-row td.marca-col{color:var(--acento);}
 
   .qval{line-height:1.3;white-space:nowrap;}
-  .qvar,.tvar{font-size:11px;margin-top:3px;font-family:"IBM Plex Mono",monospace;line-height:1.4;color:#8A929C;white-space:nowrap;}
-  .qvar.var-up,.tvar.var-up,.v-pos{color:#1E7D4F;}
-  .qvar.var-down,.tvar.var-down,.v-neg{color:#C0392B;}
-  .qvar.var-flat,.tvar.var-flat,.v-flat{color:#8A929C;}
-  .qvar.var-up::before,.tvar.var-up::before{content:"▲ ";font-size:8px;}
-  .qvar.var-down::before,.tvar.var-down::before{content:"▼ ";font-size:8px;}
+  .mini{font-size:11px;margin-top:3px;font-family:"IBM Plex Mono",monospace;line-height:1.45;color:#8A929C;white-space:nowrap;}
+  .mini.v-pos{color:#1E7D4F;} .mini.v-neg{color:#C0392B;} .mini.v-flat{color:#8A929C;}
+  .v-pos{color:#1E7D4F;} .v-neg{color:#C0392B;} .v-flat{color:#8A929C;}
   .chk{display:inline-flex;align-items:center;gap:7px;font-size:13px;color:var(--texto-2);cursor:pointer;user-select:none;}
   .chk input{width:15px;height:15px;accent-color:var(--acento);cursor:pointer;}
 
@@ -212,9 +209,9 @@
           <div class="seg" id="segMedidas"></div>
         </div>
         <div class="grupo-control"><span>Indicadores</span>
-          <label class="chk"><input type="checkbox" id="chkPct" checked /> % var</label>
-          <label class="chk"><input type="checkbox" id="chkDif" checked /> dif año ant</label>
-          <label class="chk"><input type="checkbox" id="chkQTrim" checked /> por trimestre</label>
+          <label class="chk"><input type="checkbox" id="chkPct" checked /> % var compra</label>
+          <label class="chk"><input type="checkbox" id="chkDif" checked /> dif año ant compra</label>
+          <label class="chk"><input type="checkbox" id="chkPpto" checked /> % var Ppto</label>
         </div>
         <div class="grupo-control"><span>Ver todo en</span>
           <div class="seg" id="segMoneda"></div>
@@ -273,7 +270,7 @@
 
   let DATA=null, medidaActiva=null, anioActivo=null, vista="consolidado";
   let seleccion=new Set();
-  let showPct=true, showDif=true, showQTrim=true;
+  let showPct=true, showDif=true, showPpto=true;
   let trm=3800;
   let monedaVista="COP";   // moneda en la que se muestra TODO el reporte (COP o USD)
 
@@ -287,11 +284,23 @@
 
   const esCO=new Intl.NumberFormat("es-CO",{maximumFractionDigits:0}); // punto como separador de miles
   const fmtUnidades=n=>esCO.format(Math.round(n));
-  function fmtMoneda(n,moneda){
-    const r=esCO.format(Math.round(n));   // punto de miles para COP y USD
-    return moneda==="USD" ? "US$ "+r : "$ "+r;
+  // Abreviación adaptativa: mil M (>=1e9), M (>=1e6), mil (>=1e3), o completo.
+  function abreviar(n){
+    const a=Math.abs(n);
+    if(a>=1e9) return {v:n/1e9, suf:" mil M"};
+    if(a>=1e6) return {v:n/1e6, suf:" M"};
+    if(a>=1e3) return {v:n/1e3, suf:" mil"};
+    return {v:n, suf:""};
   }
-  // ---- catálogo de medidas (incluye Costo promedio derivado) ----
+  function numAbrev(n){
+    const {v,suf}=abreviar(n);
+    if(!suf) return esCO.format(Math.round(n));
+    return v.toLocaleString("es-CO",{minimumFractionDigits:1,maximumFractionDigits:1})+suf;
+  }
+  function fmtMoneda(n,moneda,abrev){
+    const sym = moneda==="USD" ? "US$ " : "$ ";
+    return abrev ? sym+numAbrev(n) : sym+esCO.format(Math.round(n));
+  }
   function medidasUI(){
     const base=DATA.medidas.map(m=>({id:m.id,label:m.label,tipo:m.tipo}));
     base.push({id:"costoprom",label:"Ticket promedio de compra",tipo:"moneda",perUnidad:true});
@@ -299,10 +308,11 @@
   }
   function medidaObj(id){return medidasUI().find(m=>m.id===id);}
   function esMonetaria(med){return med.tipo==="moneda";}
+  // Saldo $$ (moneda no unitaria) -> abreviado; Ticket -> completo; Unidades -> abreviado.
   function fmtMedida(v,med,moneda){
     if(v===null||v===undefined) return "—";
-    if(med.tipo==="moneda") return fmtMoneda(v,moneda)+(med.perUnidad?" /u":"");
-    return fmtUnidades(v);
+    if(med.tipo==="moneda") return med.perUnidad ? fmtMoneda(v,moneda,false)+" /u" : fmtMoneda(v,moneda,true);
+    return numAbrev(v);
   }
 
   function reportadaEnAnioX(m,anio){return m.estado==="completo" && m.valores && m.valores[anio];}
@@ -318,7 +328,7 @@
     DATA.trimestres.forEach(q=>{const v=rawNivelEn(m,anio,q,nivel,medId); if(v!==null){t=(t||0)+v;}});
     return t;
   }
-  // valor de una marca en la MEDIDA elegida y la MONEDA DE VISTA
+  // ---- COMPRA: valor de una marca en la MEDIDA elegida y la MONEDA DE VISTA ----
   function cellVal(m,anio,q,nivel,medId){
     if(medId==="unidades") return rawNivelEn(m,anio,q,nivel,"unidades");
     if(medId==="costoprom"){
@@ -326,7 +336,7 @@
       if(c===null||u===null||u===0) return null;
       const cv=conv(c,m.moneda); return cv===null?null:cv/u;
     }
-    return conv(rawNivelEn(m,anio,q,nivel,"costo"), m.moneda);   // costo
+    return conv(rawNivelEn(m,anio,q,nivel,"costo"), m.moneda);
   }
   function annualVal(m,anio,nivel,medId){
     if(medId==="unidades") return rawTotalEn(m,anio,nivel,"unidades");
@@ -337,7 +347,6 @@
     }
     return conv(rawTotalEn(m,anio,nivel,"costo"), m.moneda);
   }
-  // grupo: TODAS las marcas se suman ya convertidas a la moneda de vista
   function grpCellVal(brs,anio,q,medId){
     if(medId==="costoprom"){
       let c=0,u=0,any=false;
@@ -359,42 +368,59 @@
     let s=null; brs.forEach(m=>{const v=conv(rawTotalEn(m,anio,"TOTAL","costo"),m.moneda); if(v!==null)s=(s||0)+v;}); return s;
   }
 
+  // ---- PRESUPUESTO (solo consolidado, nivel total; 0/vacio ya viene como null) ----
+  function tienePpto(m,anio){ return !!(m.ppto && m.ppto[anio]); }
+  function pptoCel(m,anio,q,medId){
+    const p=m.ppto && m.ppto[anio] && m.ppto[anio][q];
+    if(!p) return null;
+    if(medId==="unidades") return (p.unidades==null)?null:p.unidades;
+    if(medId==="costoprom"){ if(p.costo==null||p.unidades==null||p.unidades===0) return null; const cv=conv(p.costo,m.moneda); return cv==null?null:cv/p.unidades; }
+    return conv(p.costo,m.moneda);
+  }
+  function pptoTot(m,anio,medId){
+    if(medId==="costoprom"){
+      let c=0,u=0,any=false;
+      DATA.trimestres.forEach(q=>{const p=m.ppto&&m.ppto[anio]&&m.ppto[anio][q]; if(p&&p.costo!=null&&p.unidades!=null){c+=conv(p.costo,m.moneda);u+=p.unidades;any=true;}});
+      return (any&&u>0)?c/u:null;
+    }
+    let s=null; DATA.trimestres.forEach(q=>{const v=pptoCel(m,anio,q,medId); if(v!==null)s=(s||0)+v;}); return s;
+  }
+  function grpPptoCel(brs,anio,q,medId){
+    if(medId==="costoprom"){ let c=0,u=0,any=false; brs.forEach(m=>{const p=m.ppto&&m.ppto[anio]&&m.ppto[anio][q]; if(p&&p.costo!=null&&p.unidades!=null){c+=conv(p.costo,m.moneda);u+=p.unidades;any=true;}}); return (any&&u>0)?c/u:null; }
+    let s=null; brs.forEach(m=>{const v=pptoCel(m,anio,q,medId); if(v!==null)s=(s||0)+v;}); return s;
+  }
+  function grpPptoTot(brs,anio,medId){
+    if(medId==="costoprom"){ let c=0,u=0,any=false; brs.forEach(m=>{DATA.trimestres.forEach(q=>{const p=m.ppto&&m.ppto[anio]&&m.ppto[anio][q]; if(p&&p.costo!=null&&p.unidades!=null){c+=conv(p.costo,m.moneda);u+=p.unidades;any=true;}});}); return (any&&u>0)?c/u:null; }
+    let s=null; brs.forEach(m=>{const v=pptoTot(m,anio,medId); if(v!==null)s=(s||0)+v;}); return s;
+  }
+
   function prevAnio(){const i=DATA.meta.anios.indexOf(anioActivo); return i>0?DATA.meta.anios[i-1]:null;}
   function varPct(a,b){ if(a===null||b===null||b===0) return null; return (a-b)/b*100; }
-  function flechaTxt(p){ if(p===null) return "—"; const f=p>0.05?"▲ ":(p<-0.05?"▼ ":""); return f+Math.abs(p).toFixed(1)+"%"; }
+  function flechaPref(sign){ return sign>0.0001?"▲ ":(sign<-0.0001?"▼ ":""); }
+  function claseSigno(sign){ return sign>0.0001?"v-pos":(sign<-0.0001?"v-neg":"v-flat"); }
+  function pctTxt(p){ return Math.abs(p).toLocaleString("es-CO",{minimumFractionDigits:1,maximumFractionDigits:1})+"%"; }
+  function flechaTxt(p){ if(p===null) return "—"; return flechaPref(p)+pctTxt(p); }
   function difTxt(a,b,med,moneda){
-    if(a===null||b===null) return "Δ —";
-    const dif=a-b, s=dif>0?"+":(dif<0?"−":""), abs=Math.abs(dif);
-    const cuerpo=med.tipo==="moneda"?fmtMoneda(abs,moneda)+(med.perUnidad?" /u":""):fmtUnidades(abs);
-    return "dif año ant "+s+cuerpo;
+    if(a===null||b===null) return "—";
+    const dif=a-b; return flechaPref(dif)+fmtMedida(Math.abs(dif),med,moneda);
   }
-  // minis de comparativo (clase qvar=trimestre, tvar=anual)
-  function miniPct(a,b,clase){
-    const d=document.createElement("div"); d.className=clase;
-    const p=varPct(a,b);
-    if(p===null){d.textContent="—"; return d;}
-    d.textContent=Math.abs(p).toFixed(1)+"%";
-    d.classList.add(p>0.05?"var-up":(p<-0.05?"var-down":"var-flat"));
+  // mini con NOMBRE del indicador (flecha embebida, color por signo)
+  function miniLinea(label, sign, texto){
+    const d=document.createElement("div"); d.className="mini "+claseSigno(sign);
+    d.textContent = label+": "+(sign===null?"—":flechaPref(sign)+texto);
     return d;
   }
-  function miniDif(a,b,med,moneda,clase){
-    const d=document.createElement("div"); d.className=clase;
-    if(a===null||b===null){d.textContent="—"; return d;}
-    const dif=a-b, abs=Math.abs(dif);
-    const cuerpo=med.tipo==="moneda"?fmtMoneda(abs,moneda)+(med.perUnidad?" /u":""):fmtUnidades(abs);
-    d.textContent="dif año ant "+cuerpo;
-    d.classList.add(dif>0?"var-up":(dif<0?"var-down":"var-flat"));
-    return d;
+  function miniPct(label,a,b){ const p=varPct(a,b); return miniLinea(label, p, p===null?"":pctTxt(p)); }
+  function miniDif(label,a,b,med,moneda){
+    const dif=(a===null||b===null)?null:(a-b);
+    return miniLinea(label, dif, dif===null?"":fmtMedida(Math.abs(dif),med,moneda));
   }
-  // arma una celda: vShow = valor mostrado; (aCmp,bCmp) = par para el comparativo
-  function celdaValor(td, vShow, aCmp, bCmp, med, moneda, esTrim){
+  // Celda: valor + (% var compra) + (dif año ant compra) + (% var Ppto, si aplica).
+  function celdaValor(td, vShow, cmpC, cmpP, med, moneda){
     const dv=document.createElement("div"); dv.className="qval"; dv.textContent=fmtMedida(vShow,med,moneda); td.appendChild(dv);
-    const mostrar = esTrim ? showQTrim : true;
-    if(mostrar){
-      const clase = esTrim ? "qvar" : "tvar";
-      if(showPct) td.appendChild(miniPct(aCmp,bCmp,clase));
-      if(showDif) td.appendChild(miniDif(aCmp,bCmp,med,moneda,clase));
-    }
+    if(showPct) td.appendChild(miniPct("% var compra", cmpC.a, cmpC.b));
+    if(showDif) td.appendChild(miniDif("dif año ant compra", cmpC.a, cmpC.b, med, moneda));
+    if(showPpto && cmpP) td.appendChild(miniPct("% var Ppto", cmpP.a, cmpP.b));
   }
 
   function init(data){
@@ -420,7 +446,7 @@
     document.getElementById("selNinguna").addEventListener("click",()=>{seleccion=new Set();construirChips();render();});
     document.getElementById("chkPct").addEventListener("change",e=>{showPct=e.target.checked;render();});
     document.getElementById("chkDif").addEventListener("change",e=>{showDif=e.target.checked;render();});
-    document.getElementById("chkQTrim").addEventListener("change",e=>{showQTrim=e.target.checked;render();});
+    document.getElementById("chkPpto").addEventListener("change",e=>{showPpto=e.target.checked;render();});
     const trmEl=document.getElementById("trmInput");
     trm = parseFloat(trmEl.value)||0;
     trmEl.addEventListener("input",e=>{ trm=parseFloat(e.target.value)||0; render(); });
@@ -482,17 +508,22 @@
     if(opts && opts.clase) tr.className=opts.clase;
     if(opts && opts.celdaMarca){ tr.appendChild(opts.celdaMarca); }
     const prev=prevAnio();
+    const conPpto = !!(opts && opts.mostrarPpto);
     DATA.trimestres.forEach(q=>{
       const td=document.createElement("td");
       const a=cellVal(m,anioActivo,q,nivel,med.id);
       const b=prev?cellVal(m,prev,q,nivel,med.id):null;
-      celdaValor(td,a,a,b,med,monedaVista,true);
+      let pp=null;
+      if(conPpto){ pp={a:pptoCel(m,anioActivo,q,med.id), b:prev?pptoCel(m,prev,q,med.id):null}; }
+      celdaValor(td,a,{a:a,b:b},pp,med,monedaVista);
       tr.appendChild(td);
     });
     const tdT=document.createElement("td"); tdT.className="total-col";
     const at=annualVal(m,anioActivo,nivel,med.id);
     const bt=prev?annualVal(m,prev,nivel,med.id):null;
-    celdaValor(tdT,at,at,bt,med,monedaVista,false);
+    let ppT=null;
+    if(conPpto){ ppT={a:pptoTot(m,anioActivo,med.id), b:prev?pptoTot(m,prev,med.id):null}; }
+    celdaValor(tdT,at,{a:at,b:bt},ppT,med,monedaVista);
     tr.appendChild(tdT);
     return tr;
   }
@@ -531,7 +562,7 @@
 
     if(vista==="consolidado"){
       visibles.forEach(m=>{
-        if(reportadaEnAnio(m)) tbody.appendChild(filaValores(m,"TOTAL",med,{celdaMarca:celdaMarca(m)}));
+        if(reportadaEnAnio(m)) tbody.appendChild(filaValores(m,"TOTAL",med,{celdaMarca:celdaMarca(m),mostrarPpto:true}));
         else tbody.appendChild(filaPendiente(m));
       });
       construirPie(tfoot, visibles, med, qs);
@@ -544,10 +575,10 @@
           tbody.appendChild(trg);
           m.segmentos.forEach(s=>{
             const tdS=document.createElement("td"); tdS.className="marca-col"; tdS.textContent=s;
-            tbody.appendChild(filaValores(m,s,med,{clase:"seg-row",celdaMarca:tdS}));
+            tbody.appendChild(filaValores(m,s,med,{clase:"seg-row",celdaMarca:tdS,mostrarPpto:false}));
           });
           const tdSub=document.createElement("td"); tdSub.className="marca-col"; tdSub.textContent="Total "+m.nombre;
-          tbody.appendChild(filaValores(m,"TOTAL",med,{clase:"subtotal",celdaMarca:tdSub}));
+          tbody.appendChild(filaValores(m,"TOTAL",med,{clase:"subtotal",celdaMarca:tdSub,mostrarPpto:false}));
         }else{
           tbody.appendChild(filaPendiente(m));
         }
@@ -559,6 +590,7 @@
   // Pie: un solo total con TODAS las marcas reportadas, ya en la moneda de vista.
   function filaPie(tfoot, etiqueta, grupo, comparables, med, qs, moneda){
     const prev=prevAnio();
+    const compP = comparables.filter(m=>tienePpto(m,anioActivo) && (prev?tienePpto(m,prev):false));
     const tr=document.createElement("tr");
     const td0=document.createElement("td"); td0.className="marca-col"; td0.textContent=etiqueta; tr.appendChild(td0);
     qs.forEach(q=>{
@@ -566,14 +598,16 @@
       const vShow=grpCellVal(grupo,anioActivo,q,med.id);
       const aCmp=comparables.length?grpCellVal(comparables,anioActivo,q,med.id):null;
       const bCmp=(prev&&comparables.length)?grpCellVal(comparables,prev,q,med.id):null;
-      celdaValor(td,vShow,aCmp,bCmp,med,moneda,true);
+      const pp={a:compP.length?grpPptoCel(compP,anioActivo,q,med.id):null, b:(prev&&compP.length)?grpPptoCel(compP,prev,q,med.id):null};
+      celdaValor(td,vShow,{a:aCmp,b:bCmp},pp,med,moneda);
       tr.appendChild(td);
     });
     const tdT=document.createElement("td");
     const vShowT=grpAnnualVal(grupo,anioActivo,med.id);
     const aCmpT=comparables.length?grpAnnualVal(comparables,anioActivo,med.id):null;
     const bCmpT=(prev&&comparables.length)?grpAnnualVal(comparables,prev,med.id):null;
-    celdaValor(tdT,vShowT,aCmpT,bCmpT,med,moneda,false);
+    const ppT={a:compP.length?grpPptoTot(compP,anioActivo,med.id):null, b:(prev&&compP.length)?grpPptoTot(compP,prev,med.id):null};
+    celdaValor(tdT,vShowT,{a:aCmpT,b:bCmpT},ppT,med,moneda);
     tr.appendChild(tdT);
     tfoot.appendChild(tr);
   }
@@ -626,13 +660,25 @@
     return '<span class="'+cls+'">'+txt+'</span>';
   }
   function comparativoTexto(comp, med, prev, curFmt){
-    if(!prev || (!showPct && !showDif)) return "";
-    if(!comp.length) return "vs "+prev+':  <span class="v-flat">s/ base</span>';
-    const a=grpAnnualVal(comp,anioActivo,med.id), b=grpAnnualVal(comp,prev,med.id);
-    const segs=[];
-    if(showPct){ const p=varPct(a,b); segs.push(spanSign(flechaTxt(p), p===null?0:p)); }
-    if(showDif){ const dif=(a===null||b===null)?null:(a-b); segs.push(spanSign(difTxt(a,b,med,curFmt), dif===null?0:dif)); }
-    return "vs "+prev+":  "+segs.join("  ");
+    if(!prev || (!showPct && !showDif && !showPpto)) return "";
+    const partes=[];
+    if(showPct){
+      if(comp.length){ const a=grpAnnualVal(comp,anioActivo,med.id), b=grpAnnualVal(comp,prev,med.id), p=varPct(a,b);
+        partes.push('% var compra '+spanSign(flechaTxt(p), p===null?0:p)); }
+      else partes.push('% var compra <span class="v-flat">s/ base</span>');
+    }
+    if(showDif){
+      if(comp.length){ const a=grpAnnualVal(comp,anioActivo,med.id), b=grpAnnualVal(comp,prev,med.id), dif=(a===null||b===null)?null:(a-b);
+        partes.push('dif año ant compra '+spanSign(difTxt(a,b,med,curFmt), dif===null?0:dif)); }
+      else partes.push('dif año ant compra <span class="v-flat">s/ base</span>');
+    }
+    if(showPpto){
+      const compP=comp.filter(m=>tienePpto(m,anioActivo) && tienePpto(m,prev));
+      if(compP.length){ const a=grpPptoTot(compP,anioActivo,med.id), b=grpPptoTot(compP,prev,med.id), p=varPct(a,b);
+        partes.push('% var Ppto '+spanSign(flechaTxt(p), p===null?0:p)); }
+      else partes.push('% var Ppto <span class="v-flat">s/ base</span>');
+    }
+    return "vs "+prev+":  "+partes.join("&nbsp;&nbsp;·&nbsp;&nbsp;");
   }
 
   fetch("./data.json",{cache:"no-store"})
