@@ -109,7 +109,7 @@
   tbody td{padding:13px 18px;border-bottom:1px solid var(--linea);text-align:right;
     font-family:"IBM Plex Mono",monospace;font-variant-numeric:tabular-nums;font-size:14px;}
   tbody td.marca-col{text-align:left;font-family:"Inter";font-weight:600;font-size:14.5px;color:var(--tinta);}
-  .marca-cell{display:flex;align-items:center;gap:10px;}
+  .marca-cell{display:flex;align-items:center;gap:10px;line-height:1.3;}
   tbody td.total-col{font-weight:500;color:var(--tinta);background:#FCFBF8;}
   tbody tr.pendiente td{color:var(--texto-3);}
   .pend-tag{font-family:"Inter";font-size:12.5px;font-weight:600;color:var(--pend);background:var(--pend-tint);
@@ -148,8 +148,11 @@
 
   .qval{line-height:1.3;white-space:nowrap;}
   .mini{font-size:11px;margin-top:3px;font-family:"IBM Plex Mono",monospace;line-height:1.45;color:#8A929C;white-space:nowrap;}
+  .mini.leg{color:#6B7280;}
   .mini.v-pos{color:#1E7D4F;} .mini.v-neg{color:#C0392B;} .mini.v-flat{color:#8A929C;}
   .v-pos{color:#1E7D4F;} .v-neg{color:#C0392B;} .v-flat{color:#8A929C;}
+  tbody td,tfoot td{vertical-align:top;}
+  tbody td.marca-col,tfoot td.marca-col{line-height:1.3;}
   .chk{display:inline-flex;align-items:center;gap:7px;font-size:13px;color:var(--texto-2);cursor:pointer;user-select:none;}
   .chk input{width:15px;height:15px;accent-color:var(--acento);cursor:pointer;}
 
@@ -405,22 +408,33 @@
     const dif=a-b; return flechaPref(dif)+fmtMedida(Math.abs(dif),med,moneda);
   }
   // mini con NOMBRE del indicador (flecha embebida, color por signo)
-  function miniLinea(label, sign, texto){
+  function miniValor(sign, texto){
     const d=document.createElement("div"); d.className="mini "+claseSigno(sign);
-    d.textContent = label+": "+(sign===null?"—":flechaPref(sign)+texto);
+    d.textContent = (sign===null?"—":flechaPref(sign)+texto);
     return d;
   }
-  function miniPct(label,a,b){ const p=varPct(a,b); return miniLinea(label, p, p===null?"":pctTxt(p)); }
-  function miniDif(label,a,b,med,moneda){
-    const dif=(a===null||b===null)?null:(a-b);
-    return miniLinea(label, dif, dif===null?"":fmtMedida(Math.abs(dif),med,moneda));
+  function miniPct(a,b){ const p=varPct(a,b); return miniValor(p, p===null?"":pctTxt(p)); }
+  function miniDif(a,b,med,moneda){ const dif=(a===null||b===null)?null:(a-b); return miniValor(dif, dif===null?"":fmtMedida(Math.abs(dif),med,moneda)); }
+
+  // Nombres de los indicadores activos (leyenda que va en la columna de marca)
+  function nombresIndicadores(conPpto){
+    const arr=[];
+    if(showPct) arr.push("% var compra");
+    if(showDif) arr.push("dif año ant compra");
+    if(showPpto && conPpto) arr.push("% var Ppto");
+    return arr;
   }
-  // Celda: valor + (% var compra) + (dif año ant compra) + (% var Ppto, si aplica).
+  function agregarLeyenda(tdIzq, conPpto){
+    nombresIndicadores(conPpto).forEach(n=>{
+      const d=document.createElement("div"); d.className="mini leg"; d.textContent=n; tdIzq.appendChild(d);
+    });
+  }
+  // Celda de datos: valor + valores de indicadores (sin nombre; el nombre va a la izquierda)
   function celdaValor(td, vShow, cmpC, cmpP, med, moneda){
     const dv=document.createElement("div"); dv.className="qval"; dv.textContent=fmtMedida(vShow,med,moneda); td.appendChild(dv);
-    if(showPct) td.appendChild(miniPct("% var compra", cmpC.a, cmpC.b));
-    if(showDif) td.appendChild(miniDif("dif año ant compra", cmpC.a, cmpC.b, med, moneda));
-    if(showPpto && cmpP) td.appendChild(miniPct("% var Ppto", cmpP.a, cmpP.b));
+    if(showPct) td.appendChild(miniPct(cmpC.a, cmpC.b));
+    if(showDif) td.appendChild(miniDif(cmpC.a, cmpC.b, med, moneda));
+    if(showPpto && cmpP) td.appendChild(miniPct(cmpP.a, cmpP.b));
   }
 
   function init(data){
@@ -509,6 +523,7 @@
     if(opts && opts.celdaMarca){ tr.appendChild(opts.celdaMarca); }
     const prev=prevAnio();
     const conPpto = !!(opts && opts.mostrarPpto);
+    if(opts && opts.celdaMarca) agregarLeyenda(opts.celdaMarca, conPpto);
     DATA.trimestres.forEach(q=>{
       const td=document.createElement("td");
       const a=cellVal(m,anioActivo,q,nivel,med.id);
@@ -593,6 +608,7 @@
     const compP = comparables.filter(m=>tienePpto(m,anioActivo) && (prev?tienePpto(m,prev):false));
     const tr=document.createElement("tr");
     const td0=document.createElement("td"); td0.className="marca-col"; td0.textContent=etiqueta; tr.appendChild(td0);
+    agregarLeyenda(td0, true);
     qs.forEach(q=>{
       const td=document.createElement("td");
       const vShow=grpCellVal(grupo,anioActivo,q,med.id);
