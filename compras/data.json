@@ -9,8 +9,8 @@
       "2027"
     ],
     "anioActivo": "2026",
-    "generado": "2026-07-29 08:05",
-    "fuenteModificada": "2026-07-28 14:33",
+    "generado": "2026-07-31 09:48",
+    "fuenteModificada": "2026-07-29 12:14",
     "totalMarcas": 7,
     "monedas": [
       "COP",
@@ -728,9 +728,138 @@
               "unidades": 57348.0
             }
           }
+        },
+        "2027": {
+          "Q1": {
+            "TOTAL": {
+              "costo": 2147054.25,
+              "unidades": 243375.0
+            },
+            "Core": {
+              "costo": 685344.0,
+              "unidades": 107085.0
+            },
+            "Core Fashion": {
+              "costo": 1185723.0,
+              "unidades": 102217.5
+            },
+            "Fashion": {
+              "costo": 275987.25,
+              "unidades": 34072.5
+            }
+          },
+          "Q2": {
+            "TOTAL": {
+              "costo": null,
+              "unidades": null
+            },
+            "Core": {
+              "costo": null,
+              "unidades": null
+            },
+            "Core Fashion": {
+              "costo": null,
+              "unidades": null
+            },
+            "Fashion": {
+              "costo": null,
+              "unidades": null
+            }
+          },
+          "Q3": {
+            "TOTAL": {
+              "costo": null,
+              "unidades": null
+            },
+            "Core": {
+              "costo": null,
+              "unidades": null
+            },
+            "Core Fashion": {
+              "costo": null,
+              "unidades": null
+            },
+            "Fashion": {
+              "costo": null,
+              "unidades": null
+            }
+          },
+          "Q4": {
+            "TOTAL": {
+              "costo": null,
+              "unidades": null
+            },
+            "Core": {
+              "costo": null,
+              "unidades": null
+            },
+            "Core Fashion": {
+              "costo": null,
+              "unidades": null
+            },
+            "Fashion": {
+              "costo": null,
+              "unidades": null
+            }
+          }
         }
       },
-      "ppto": {}
+      "ppto": {
+        "2025": {
+          "Q1": {
+            "costo": 6067892.0,
+            "unidades": 222438.0
+          },
+          "Q2": {
+            "costo": 8259821.0,
+            "unidades": 311680.0
+          },
+          "Q3": {
+            "costo": 8727470.0,
+            "unidades": 313322.0
+          },
+          "Q4": {
+            "costo": 18337701.0,
+            "unidades": 621954.0
+          }
+        },
+        "2026": {
+          "Q1": {
+            "costo": 7844097.0,
+            "unidades": 277233.0
+          },
+          "Q2": {
+            "costo": 9675397.0,
+            "unidades": 285837.0
+          },
+          "Q3": {
+            "costo": 11936000.0,
+            "unidades": 426285.0
+          },
+          "Q4": {
+            "costo": 19432571.0,
+            "unidades": 694020.0
+          }
+        },
+        "2027": {
+          "Q1": {
+            "costo": 9759277.0,
+            "unidades": 336526.0
+          },
+          "Q2": {
+            "costo": null,
+            "unidades": null
+          },
+          "Q3": {
+            "costo": null,
+            "unidades": null
+          },
+          "Q4": {
+            "costo": null,
+            "unidades": null
+          }
+        }
+      }
     },
     {
       "nombre": "Moft",
