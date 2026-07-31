@@ -143,6 +143,26 @@
   .trm{width:96px;font-family:"IBM Plex Mono",monospace;font-size:13.5px;text-align:right;
     border:1px solid var(--linea-fuerte);border-radius:var(--r);padding:7px 10px;background:var(--superficie);color:var(--tinta);}
   .trm:focus-visible{outline:2px solid var(--acento);outline-offset:-1px;}
+  .btn-proy{font-family:"Archivo",sans-serif;font-weight:600;font-size:13px;border:1px solid var(--linea-fuerte);
+    background:var(--superficie);color:var(--tinta);padding:9px 16px;border-radius:var(--r);cursor:pointer;transition:all .15s;}
+  .btn-proy:hover{border-color:var(--acento);}
+  .btn-proy[aria-pressed="true"]{background:var(--tinta);color:#fff;border-color:var(--tinta);}
+  .btn-proy:focus-visible{outline:2px solid var(--acento);outline-offset:2px;}
+
+  /* ===== MODO PROYECCIÓN: agranda valores y usa todo el ancho, sin cambiar estructura ===== */
+  body.proyeccion .wrap{max-width:100%;padding:0 20px;}
+  body.proyeccion .hero{padding:14px 0 10px;}
+  body.proyeccion .hero h1{font-size:26px;}
+  body.proyeccion .eyebrow{margin-bottom:4px;}
+  body.proyeccion .hero .sub,body.proyeccion .readout,body.proyeccion .footnotes{display:none;}
+  body.proyeccion thead th{font-size:16px;padding:16px 22px;}
+  body.proyeccion tbody td,body.proyeccion tfoot td{padding:18px 22px;}
+  body.proyeccion .qval{font-size:24px;line-height:1.25;}
+  body.proyeccion tbody td.marca-col,body.proyeccion tfoot td.marca-col{font-size:22px;}
+  body.proyeccion .badge{font-size:13px;padding:3px 9px;}
+  body.proyeccion .mini{font-size:15px;margin-top:5px;}
+  body.proyeccion tbody tr.grupo td{font-size:17px;}
+  body.proyeccion .pend-tag{font-size:16px;padding:5px 14px;}
   tfoot tr.cons-row td{background:var(--acento-tint);}
   tfoot tr.cons-row td.marca-col{color:var(--acento);}
 
@@ -222,6 +242,7 @@
         <div class="grupo-control"><span>TRM USD↔COP</span>
           <input type="number" id="trmInput" class="trm" value="3800" min="0" step="50" inputmode="numeric" />
         </div>
+        <button id="btnProyeccion" class="btn-proy" type="button" aria-pressed="false">⛶ Proyección</button>
       </div>
     </div>
 
@@ -464,6 +485,11 @@
     const trmEl=document.getElementById("trmInput");
     trm = parseFloat(trmEl.value)||0;
     trmEl.addEventListener("input",e=>{ trm=parseFloat(e.target.value)||0; render(); });
+    const btnP=document.getElementById("btnProyeccion");
+    btnP.addEventListener("click",()=>{
+      const on=document.body.classList.toggle("proyeccion");
+      btnP.setAttribute("aria-pressed",String(on));
+    });
 
     render();
   }
