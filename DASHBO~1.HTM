@@ -154,7 +154,11 @@ body {
    ninguna marca se queda sola al final. En pantallas angostas baja a tres, dos y
    una columna, siempre repartiendo por igual. */
 .cards { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; align-items: stretch; }
-@media (max-width: 1400px) { .cards { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+/* Umbral bajado de 1400 a 1180 px. Medido en la pantalla de Planeacion
+   (1280 px utiles): con 4 columnas la tarjeta queda en 287 px y los 38
+   bullets caben en un renglon a 15 px, sin llegar al piso. En proyeccion
+   quedan en 17.6 px efectivos y no aparece scroll horizontal. */
+@media (max-width: 1180px) { .cards { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
 @media (max-width: 1000px) { .cards { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 @media (max-width: 620px)  { .cards { grid-template-columns: minmax(0, 1fr); } }
 .card { background: #fff; border: var(--borde) solid var(--rfl-arena-md); border-radius: 8px; padding: 0; cursor: pointer; transition: transform .14s, box-shadow .14s, border-color .14s; overflow: hidden; text-align: left; font-family: inherit; display: flex; flex-direction: column; }
@@ -242,7 +246,9 @@ body {
       <div class="header-divider"></div>
       <div>
         <div class="header-title">ANÁLISIS COMPETITIVO DE PRECIOS</div>
-        <div class="header-sub">American Eagle · Mango · Moft · Naf Naf · Rifle · Vivant</div>
+        <!-- La lista de marcas se arma sola a partir de MARCAS, para que no se
+             quede atras cuando entre una marca nueva. -->
+        <div class="header-sub" id="header-marcas"></div>
       </div>
     </div>
     <div class="header-right">
@@ -579,6 +585,13 @@ window.addEventListener('resize', () => {
   clearTimeout(reAlinear);
   reAlinear = setTimeout(acomodarTarjetas, 140);
 });
+
+/* La lista de marcas de la banda azul sale de MARCAS, en el mismo orden
+   alfabetico de las tarjetas. Antes estaba escrita a mano y se quedo con las
+   seis viejas cuando entraron Aerie y G-Star. */
+document.getElementById('header-marcas').textContent =
+  MARCAS.map(m => m.nombre.replace(/\b\p{Lu}\p{Lu}+\b/gu,
+      p => p.charAt(0) + p.slice(1).toLowerCase())).join(' · ');
 
 document.getElementById('footNote').innerHTML =
   `<b>${MARCAS.length}</b> dashboards conectados &nbsp;·&nbsp; ` +
