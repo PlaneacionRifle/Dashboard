@@ -521,6 +521,16 @@ function ajustarBullets() {
   const base = parseFloat(getComputedStyle(bullets[0]).fontSize);
   if (!base) return;
 
+  /* Guarda contra medidas falsas. Si el cuadro del bullet dice ser mas ancho
+     que la tarjeta que lo contiene, el navegador todavia no reparte el ancho
+     de las columnas: cualquier calculo hecho aqui sale mal. Se reintenta en el
+     siguiente frame en vez de decidir con datos malos. */
+  const sospechoso = bullets.some(b => {
+    const tarjeta = b.closest('.card');
+    return tarjeta && b.clientWidth > tarjeta.clientWidth;
+  });
+  if (sospechoso) { requestAnimationFrame(ajustarBullets); return; }
+
   /* El -1px es margen de seguridad: el navegador redondea el ancho del texto
      al pixel, y sin holgura una linea que calza justo se parte de todos modos. */
   let escala = 1;
@@ -575,10 +585,27 @@ function acomodarTarjetas() {
   alinearHallazgos();
 }
 
-/* Dos pasadas: la primera al pintar, la segunda cuando la fuente ya está
-   aplicada, porque antes de eso las medidas cambian. */
-requestAnimationFrame(acomodarTarjetas);
-window.addEventListener('load', acomodarTarjetas);
+/* Se acomoda VARIAS veces a proposito, y la ultima es la que vale.
+
+   Por que: en la primera pasada el navegador todavia no ha repartido el ancho
+   de las columnas ni ha cargado la fuente definitiva. En ese momento el cuadro
+   del bullet reporta el ancho de su propio texto -por ejemplo 708 px- en vez de
+   los 238 px que de verdad le tocan. El ajustador compara "necesito" contra
+   "tengo", le salen iguales, concluye que cabe y no reduce nada. Cuando el
+   ancho real llega, el texto ya quedo sin partir y se corta.
+
+   Con esto se vuelve a medir cuando la fuente esta lista y un cuarto de
+   segundo despues, que es cuando el reparto de columnas ya es el definitivo. */
+function acomodarCuandoSePueda() {
+  requestAnimationFrame(() => requestAnimationFrame(acomodarTarjetas));
+  if (document.fonts && document.fonts.ready) {
+    document.fonts.ready.then(acomodarTarjetas).catch(() => {});
+  }
+  setTimeout(acomodarTarjetas, 260);
+}
+
+acomodarCuandoSePueda();
+window.addEventListener('load', acomodarCuandoSePueda);
 
 let reAlinear = null;
 window.addEventListener('resize', () => {
@@ -610,8 +637,10 @@ function verHoja(cual) {
   });
   HOJA_ACTUAL = cual;
   window.scrollTo(0, 0);
-  /* Las tarjetas ocultas miden cero: se alinean al hacerse visibles. */
-  if (cual === 'marcas') requestAnimationFrame(acomodarTarjetas);
+  /* Las tarjetas ocultas miden cero: se alinean al hacerse visibles. Se usa
+     acomodarCuandoSePueda y no una sola pasada, porque al pasar de oculto a
+     visible el ancho de las columnas tarda un frame en ser el real. */
+  if (cual === 'marcas') acomodarCuandoSePueda();
 }
 let HOJA_ACTUAL = 'intro';
 
