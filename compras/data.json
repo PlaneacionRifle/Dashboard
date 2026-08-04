@@ -9,8 +9,8 @@
       "2027"
     ],
     "anioActivo": "2026",
-    "generado": "2026-08-04 15:05",
-    "fuenteModificada": "2026-07-31 09:59",
+    "generado": "2026-08-04 16:39",
+    "fuenteModificada": "2026-08-04 16:30",
     "totalMarcas": 7,
     "monedas": [
       "COP",
@@ -1444,16 +1444,16 @@
           },
           "Q3": {
             "TOTAL": {
-              "costo": 15094857364.869999,
-              "unidades": 190995.0
+              "costo": 3008967802.7721977,
+              "unidades": 46953.0
             },
             "BASICOS": {
-              "costo": 9794939320.39,
-              "unidades": 134150.0
+              "costo": 2781405479.013898,
+              "unidades": 43823.0
             },
             "MODA": {
-              "costo": 5299918044.48,
-              "unidades": 56845.0
+              "costo": 227562323.75829998,
+              "unidades": 3130.0
             }
           },
           "Q4": {
@@ -1468,6 +1468,64 @@
             "MODA": {
               "costo": 5708788503.27,
               "unidades": 62398.0
+            }
+          }
+        },
+        "2027": {
+          "Q1": {
+            "TOTAL": {
+              "costo": 16191934741.5,
+              "unidades": 241788.0
+            },
+            "BASICOS": {
+              "costo": 12374078899.35,
+              "unidades": 194584.8
+            },
+            "MODA": {
+              "costo": 3817855842.15,
+              "unidades": 47203.2
+            }
+          },
+          "Q2": {
+            "TOTAL": {
+              "costo": 12598071796.8,
+              "unidades": 175322.4
+            },
+            "BASICOS": {
+              "costo": 7845693508.8,
+              "unidades": 116212.8
+            },
+            "MODA": {
+              "costo": 4752378288.0,
+              "unidades": 59109.6
+            }
+          },
+          "Q3": {
+            "TOTAL": {
+              "costo": 15849600232.2,
+              "unidades": 229194.0
+            },
+            "BASICOS": {
+              "costo": 10284686286.0,
+              "unidades": 160980.0
+            },
+            "MODA": {
+              "costo": 5564913946.2,
+              "unidades": 68214.0
+            }
+          },
+          "Q4": {
+            "TOTAL": {
+              "costo": 17096839541.25,
+              "unidades": 231434.39999999997
+            },
+            "BASICOS": {
+              "costo": 11102611613.1,
+              "unidades": 156556.8
+            },
+            "MODA": {
+              "costo": 5994227928.150001,
+              "unidades": 74877.59999999999
             }
           }
         }
