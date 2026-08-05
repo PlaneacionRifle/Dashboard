@@ -251,7 +251,7 @@
         <div class="grupo-control"><span>Indicadores</span>
           <label class="chk"><input type="checkbox" id="chkPct" checked /> % var compra</label>
           <label class="chk"><input type="checkbox" id="chkDif" checked /> dif año ant compra</label>
-          <label class="chk"><input type="checkbox" id="chkPpto" checked /> % var Ppto</label>
+          <label class="chk"><input type="checkbox" id="chkPpto" checked /> % var Venta</label>
         </div>
         <div class="grupo-control"><span>Ver todo en</span>
           <div class="seg" id="segMoneda"></div>
@@ -458,7 +458,7 @@
     const arr=[];
     if(showPct) arr.push("% var compra");
     if(showDif) arr.push("dif año ant compra");
-    if(showPpto && conPpto) arr.push("% var Ppto");
+    if(showPpto && conPpto) arr.push("% var Venta");
     return arr;
   }
   function agregarLeyenda(tdIzq, conPpto){
@@ -733,8 +733,8 @@
     if(showPpto){
       const compP=comp.filter(m=>tienePpto(m,anioActivo) && tienePpto(m,prev));
       if(compP.length){ const a=grpPptoTot(compP,anioActivo,med.id), b=grpPptoTot(compP,prev,med.id), p=varPct(a,b);
-        partes.push('% var Ppto '+spanSign(flechaTxt(p), p===null?0:p)); }
-      else partes.push('% var Ppto <span class="v-flat">s/ base</span>');
+        partes.push('% var Venta '+spanSign(flechaTxt(p), p===null?0:p)); }
+      else partes.push('% var Venta <span class="v-flat">s/ base</span>');
     }
     return "vs "+prev+":  "+partes.join("&nbsp;&nbsp;·&nbsp;&nbsp;");
   }
