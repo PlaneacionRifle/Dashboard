@@ -1227,6 +1227,7 @@ table.matrix td.cell-rifle.count-cell { color: var(--rfl-arena); }
     <button class="tab" data-tab="oportunidades">Análisis de oportunidades</button>
     <button class="tab" data-tab="general">Análisis general de marca</button>
     <button class="tab" data-tab="fitsjeans">Fits Jeans</button>
+    <button class="tab" data-tab="conclusiones">Conclusiones</button>
   </div>
 </div>
 
@@ -1648,6 +1649,111 @@ table.matrix td.cell-rifle.count-cell { color: var(--rfl-arena); }
   </div>
 
   
+
+  <!-- ============ TAB: CONCLUSIONES ============ -->
+  <div class="tab-content" id="tab-conclusiones">
+    <style>
+      #cc-root{font-family:Arial,Helvetica,sans-serif;color:#0D1B3E;}
+      #cc-root *{box-sizing:border-box;}
+      #cc-root .cc-cols{display:grid;grid-template-columns:1.15fr 1fr;gap:22px;}
+      @media(max-width:900px){#cc-root .cc-cols{grid-template-columns:1fr;}}
+      #cc-root .cc-colhead{font-family:"Arial Black",Arial;font-weight:900;font-size:14px;letter-spacing:.06em;text-transform:uppercase;color:#0D1B3E;margin:0 0 12px;padding-bottom:8px;border-bottom:2px solid #0D1B3E;}
+      #cc-root .cc-colhead.cc-orange{border-bottom-color:#D97706;}
+      /* ACTION CARDS */
+      #cc-root .cc-action{position:relative;background:#fff;border:1px solid #E3DED6;border-left:5px solid #196B24;border-radius:6px;padding:14px 16px 14px 14px;margin-bottom:14px;display:flex;gap:12px;}
+      #cc-root .cc-action.amber{border-left-color:#D97706;}
+      #cc-root .cc-action.red{border-left-color:#B91C1C;}
+      #cc-root .cc-num{flex:0 0 auto;width:30px;height:30px;border-radius:50%;background:#EAF3EB;color:#196B24;font-family:"Arial Black",Arial;font-weight:900;font-size:13px;display:flex;align-items:center;justify-content:center;}
+      #cc-root .cc-action.amber .cc-num{background:#FBEEDD;color:#D97706;}
+      #cc-root .cc-action.red .cc-num{background:#FBEDED;color:#B91C1C;}
+      #cc-root .cc-body{flex:1 1 auto;min-width:0;}
+      #cc-root .cc-tags{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:5px;}
+      #cc-root .cc-cat{font-family:"Arial Black",Arial;font-weight:900;font-size:10.5px;letter-spacing:.05em;color:#196B24;}
+      #cc-root .cc-action.amber .cc-cat{color:#D97706;}
+      #cc-root .cc-action.red .cc-cat{color:#B91C1C;}
+      #cc-root .cc-type{font-size:10.5px;font-weight:bold;letter-spacing:.05em;color:#8A8680;text-transform:uppercase;}
+      #cc-root .cc-gap{margin-left:auto;font-family:"Arial Black",Arial;font-weight:900;font-size:13px;}
+      #cc-root .cc-gap.neg{color:#196B24;}
+      #cc-root .cc-gap.pos{color:#B91C1C;}
+      #cc-root .cc-title{font-family:"Arial Black",Arial;font-weight:900;font-size:14px;line-height:1.25;color:#0D1B3E;margin-bottom:5px;}
+      #cc-root .cc-desc{font-size:12px;line-height:1.55;color:#5b5751;}
+      #cc-root .cc-desc b{color:#0D1B3E;}
+      #cc-root .cc-foot{margin-top:9px;font-size:11px;font-weight:bold;color:#196B24;}
+      #cc-root .cc-action.amber .cc-foot{color:#B4700A;}
+      #cc-root .cc-action.red .cc-foot{color:#B91C1C;}
+      /* CONCLUSION CARDS */
+      #cc-root .cc-concl{background:#fff;border:1px solid #E3DED6;border-left:5px solid #0D1B3E;border-radius:6px;padding:13px 15px;margin-bottom:13px;display:flex;gap:12px;align-items:flex-start;}
+      #cc-root .cc-icon{flex:0 0 auto;font-size:20px;line-height:1.2;}
+      #cc-root .cc-ctitle{font-family:"Arial Black",Arial;font-weight:900;font-size:13px;line-height:1.3;color:#0D1B3E;margin-bottom:4px;}
+      #cc-root .cc-cdesc{font-size:12px;line-height:1.55;color:#5b5751;}
+      #cc-root .cc-cdesc b{color:#0D1B3E;}
+      #cc-root .cc-sig{grid-column:1 / -1;text-align:right;font-size:9px;letter-spacing:.22em;color:#8A8680;margin-top:6px;}
+    </style>
+    <div id="cc-root">
+      <div class="cc-cols">
+        <!-- LEFT: ACCIONES -->
+        <div>
+          <h3 class="cc-colhead">3 Acciones Estratégicas</h3>
+
+          <div class="cc-action">
+            <div class="cc-num">01</div>
+            <div class="cc-body">
+              <div class="cc-tags"><span class="cc-cat">JEANS</span><span class="cc-type">Subir precio</span><span class="cc-gap neg">&minus;25%</span></div>
+              <div class="cc-title">Capturar margen en Jeans sub-posicionados y blindar Magic Up</div>
+              <div class="cc-desc">En promedio Rifle está <b>alineado</b> en Jeans con el mercado (~$183K), pero deja margen en fits puntuales: en <b>Flare/Boot Cut Mujer</b> cobra <b>$139.900 vs ~$187.000</b> del mercado (&minus;25%). Adem&aacute;s, <b>Magic Up es exclusivo de Rifle</b> &mdash; 26 referencias y ning&uacute;n competidor ofrece push-up / levantacola. Acci&oacute;n: subir Flare/Boot Cut Mujer a ~$159.900&ndash;$169.900 y sostener Magic Up como premium diferenciado.</div>
+              <div class="cc-foot">Impacto estimado: +$20&ndash;30K por unidad en fits sub-posicionados &middot; bajo riesgo de precio</div>
+            </div>
+          </div>
+
+          <div class="cc-action amber">
+            <div class="cc-num">02</div>
+            <div class="cc-body">
+              <div class="cc-tags"><span class="cc-cat">CAMISETAS</span><span class="cc-type">Defender con valor</span><span class="cc-gap pos">+16%</span></div>
+              <div class="cc-title">Justificar el premium en Camisetas Mujer o ajustar el techo</div>
+              <div class="cc-desc">Camisetas Mujer es la categor&iacute;a m&aacute;s <b>sobre-posicionada</b> de Rifle: <b>$105.900 vs $91.288</b> del mercado (+16.0%). El piso lo fijan Seven Seven y Tennis desde <b>$29.900</b>. El riesgo es alto por ser categor&iacute;a de alta rotaci&oacute;n. Acci&oacute;n: reforzar valor percibido (producto / marca visible en PDV) o ajustar el techo (Pico Moda $159.900) hacia el rango del mercado. Hombre est&aacute; +5.4%, m&aacute;s manejable.</div>
+              <div class="cc-foot">Riesgo: fuga de volumen si no hay diferenciaci&oacute;n visible vs piso $29.900 (Seven Seven / Tennis)</div>
+            </div>
+          </div>
+
+          <div class="cc-action red">
+            <div class="cc-num">03</div>
+            <div class="cc-body">
+              <div class="cc-tags"><span class="cc-cat">BUZOS</span><span class="cc-type">Revisar precio</span><span class="cc-gap pos">+21%</span></div>
+              <div class="cc-title">Corregir el sobre-precio en Buzos &mdash; la categor&iacute;a de mayor riesgo</div>
+              <div class="cc-desc">Buzos es donde Rifle est&aacute; <b>m&aacute;s caro</b> frente al mercado: <b>Cerrados Mujer +21.3%</b> ($189.900 vs $156.497), <b>Tejidos Hombre +16.9%</b> ($189.900 vs $162.445) y Abiertos Mujer +15.4%. Seven Seven y Gef est&aacute;n consistentemente por debajo. Acci&oacute;n: revisar el techo de precio hacia el promedio de mercado, priorizando Cerrados Mujer y Tejidos Hombre en la pr&oacute;xima colecci&oacute;n.</div>
+              <div class="cc-foot">Riesgo: baja conversi&oacute;n por precio &middot; priorizar Cerrados Mujer (+21%) y Tejidos Hombre (+17%)</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- RIGHT: CONCLUSIONES -->
+        <div>
+          <h3 class="cc-colhead cc-orange">Conclusiones</h3>
+
+          <div class="cc-concl">
+            <div class="cc-icon">&#128202;</div>
+            <div><div class="cc-ctitle">Jeans es la categor&iacute;a m&aacute;s competitiva de Rifle y su base m&aacute;s s&oacute;lida</div><div class="cc-cdesc">Rifle est&aacute; alineado con el mercado en Jeans (entre &minus;2% y &minus;5% del promedio) y cuenta con un diferenciador que ning&uacute;n competidor ofrece: <b>Magic Up</b> (push-up), con 26 referencias exclusivas. Es la categor&iacute;a desde donde defender liderazgo.</div></div>
+          </div>
+
+          <div class="cc-concl">
+            <div class="cc-icon">&#9888;&#65039;</div>
+            <div><div class="cc-ctitle">Buzos y Camisetas Mujer concentran el mayor riesgo de sobre-precio</div><div class="cc-cdesc">Con premiums de <b>+21%</b> (Buzos Cerrados Mujer), <b>+17%</b> (Buzos Tejidos Hombre) y <b>+16%</b> (Camisetas Mujer), son las categor&iacute;as donde la competencia local (Seven Seven, Gef, Tennis) ejerce mayor presi&oacute;n. El precio debe justificarse con valor tangible o ajustarse.</div></div>
+          </div>
+
+          <div class="cc-concl">
+            <div class="cc-icon">&#128161;</div>
+            <div><div class="cc-ctitle">Jeans ofrece la &uacute;nica palanca de margen sin riesgo</div><div class="cc-cdesc">En <b>Flare/Boot Cut</b> y en el exclusivo <b>Magic Up</b>, Rifle tiene espacio para subir precio sin perder competitividad. Es margen adicional con bajo impacto en volumen.</div></div>
+          </div>
+
+          <div class="cc-concl">
+            <div class="cc-icon">&#127919;</div>
+            <div><div class="cc-ctitle">Seven Seven fija el piso agresivo &mdash; Rifle debe competir por valor</div><div class="cc-cdesc">Seven Seven descuenta cerca del <b>100%</b> de su surtido (jeans, camisetas y buzos) y pr&aacute;cticamente nunca vende a precio lleno, marcando el piso econ&oacute;mico. Competir por precio contra ese piso erosiona margen; la ventaja de Rifle est&aacute; en diferenciaci&oacute;n y marca.</div></div>
+          </div>
+        </div>
+        <div class="cc-sig">POR RIFLE &middot; PARA COLOMBIA &middot; BENCHMARK 2026</div>
+      </div>
+    </div>
+  </div>
 
 </div>
 
