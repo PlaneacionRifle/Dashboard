@@ -150,6 +150,33 @@
   .btn-proy[aria-pressed="true"]{background:var(--tinta);color:#fff;border-color:var(--tinta);}
   .btn-proy:focus-visible{outline:2px solid var(--acento);outline-offset:2px;}
 
+  /* ===== Pestaña TRM ===== */
+  .vista-top{display:flex;gap:4px;margin:18px 0 6px;border-bottom:1px solid var(--linea);}
+  .vista-top button{font-family:"Archivo",sans-serif;font-weight:600;font-size:14px;letter-spacing:.02em;
+    background:none;border:none;border-bottom:2px solid transparent;color:var(--texto-2);
+    padding:10px 16px;cursor:pointer;margin-bottom:-1px;transition:all .15s;}
+  .vista-top button:hover{color:var(--tinta);}
+  .vista-top button[aria-pressed="true"]{color:var(--acento);border-bottom-color:var(--acento);}
+  .trm-head{margin:6px 0 16px;}
+  .trm-head h2{font-family:"Archivo",sans-serif;font-size:18px;font-weight:700;color:var(--tinta);margin:0 0 6px;}
+  .trm-nota{font-size:12.5px;color:var(--texto-2);line-height:1.5;max-width:900px;margin:0 0 14px;}
+  .trm-nota b{color:var(--tinta);font-weight:600;}
+  .trm-futura{display:inline-flex;align-items:center;gap:12px;background:var(--superficie);
+    border:1px solid var(--linea-fuerte);border-radius:var(--r);padding:12px 16px;}
+  .trm-futura span{font-size:13px;font-weight:600;color:var(--tinta);}
+  #trmTabla{width:auto;min-width:520px;}
+  #trmTabla thead th{font-size:13px;}
+  #trmTabla td{text-align:right;}
+  .trm-cell{width:100px;font-family:"IBM Plex Mono",monospace;font-size:15px;text-align:right;
+    border:1px solid var(--linea-fuerte);border-radius:6px;padding:8px 10px;background:#fff;color:var(--texto-2);
+    -moz-appearance:textfield;}
+  .trm-cell::-webkit-outer-spin-button,.trm-cell::-webkit-inner-spin-button{-webkit-appearance:none;margin:0;}
+  .trm-cell:focus{outline:2px solid var(--acento);outline-offset:-1px;color:var(--tinta);}
+  .trm-cell.cerrado{background:#fff;color:var(--tinta);font-weight:600;border-color:var(--linea-fuerte);}
+  .trm-cell::placeholder{color:#B7BDC6;font-weight:400;}
+  .trm-swatch{display:inline-block;width:12px;height:12px;border-radius:3px;vertical-align:-1px;margin-right:5px;border:1px solid var(--linea-fuerte);background:#fff;}
+  .trm-swatch.cerrado{background:var(--acento);border-color:var(--acento);}
+
   /* ===== MODO PROYECCIÓN: textos grandes y tabla completa en una sola vista ===== */
   body.proyeccion .wrap{max-width:100%;padding:0 16px;}
   body.proyeccion .hero{padding:8px 0 4px;}
@@ -238,6 +265,11 @@
     </div>
   </section>
 
+  <div class="vista-top" id="vistaTop">
+    <button type="button" data-vt="informe" aria-pressed="true">Informe de compra</button>
+    <button type="button" data-vt="trm" aria-pressed="false">TRM</button>
+  </div>
+
   <section class="filtros">
     <div class="filtro-fila">
       <div class="tabs" id="tabsAnios" role="tablist" aria-label="Año"></div>
@@ -255,9 +287,6 @@
         </div>
         <div class="grupo-control"><span>Ver todo en</span>
           <div class="seg" id="segMoneda"></div>
-        </div>
-        <div class="grupo-control"><span>TRM USD↔COP</span>
-          <input type="number" id="trmInput" class="trm" value="3800" min="0" step="50" inputmode="numeric" />
         </div>
       </div>
     </div>
@@ -292,6 +321,30 @@
     <p class="nota-pend" id="notaPend"></p>
     <div class="meta-line" id="metaLine"></div>
   </div>
+  <section id="trmPanel" hidden>
+    <div class="trm-head">
+      <h2>TRM · conversión USD ↔ COP</h2>
+      <p class="trm-nota">Cada trimestre se convierte con su <b>TRM de cierre</b>. Los trimestres sin cierre usan la <b>TRM futura</b>. Los cierres vienen del Excel (hoja TRM); editar aquí simula escenarios y <b>no se publica</b> — para fijar un cierre, agrégalo en el Excel y publica.</p>
+      <div class="trm-futura">
+        <span>TRM futura (trimestres sin cierre)</span>
+        <input type="number" id="trmInput" class="trm" value="3800" min="0" step="50" inputmode="numeric" />
+      </div>
+    </div>
+    <div class="panel">
+      <table id="trmTabla">
+        <thead><tr>
+          <th class="marca-col">Año</th><th>Q1</th><th>Q2</th><th>Q3</th><th>Q4</th>
+        </tr></thead>
+        <tbody id="trmBody"></tbody>
+      </table>
+    </div>
+    <div class="footnotes">
+      <div class="legend">
+        <span><span class="trm-swatch cerrado"></span> Cierre (desde Excel)</span>
+        <span><span class="trm-swatch"></span> Sin cierre · usa TRM futura</span>
+      </div>
+    </div>
+  </section>
 </main>
 
 <script>
@@ -311,14 +364,21 @@
   let DATA=null, medidaActiva=null, anioActivo=null, vista="consolidado";
   let seleccion=new Set();
   let showPct=true, showDif=true, showPpto=true;
-  let trm=3800;
+  let trmFuturo=3800;      // TRM para trimestres sin cierre (editable)
+  let trmGrid={};          // TRM de cierre por {anio:{Q:trm}} (editable en pestaña TRM)
   let monedaVista="COP";   // moneda en la que se muestra TODO el reporte (COP o USD)
 
-  // Convierte un valor monetario de su moneda nativa a la moneda de visualización.
-  function conv(vNativo, nativa){
+  // TRM aplicable a un trimestre: la de cierre si existe; si no, la futura.
+  function trmDe(anio,q){
+    const g = trmGrid[anio] && trmGrid[anio][q];
+    return (g!=null && g>0) ? g : trmFuturo;
+  }
+  // Convierte un valor monetario nativo a la moneda de vista, con la TRM de SU trimestre.
+  function convQ(vNativo, nativa, anio, q){
     if(vNativo===null||vNativo===undefined) return null;
-    const enCOP = (nativa==="USD") ? vNativo*trm : vNativo;    // USD -> COP
-    if(monedaVista==="USD") return (trm>0) ? enCOP/trm : null; // COP -> USD
+    const T = trmDe(anio,q);
+    const enCOP = (nativa==="USD") ? vNativo*T : vNativo;   // USD -> COP
+    if(monedaVista==="USD") return (T>0) ? enCOP/T : null;  // COP -> USD
     return enCOP;
   }
 
@@ -374,38 +434,40 @@
     if(medId==="costoprom"){
       const c=rawNivelEn(m,anio,q,nivel,"costo"), u=rawNivelEn(m,anio,q,nivel,"unidades");
       if(c===null||u===null||u===0) return null;
-      const cv=conv(c,m.moneda); return cv===null?null:cv/u;
+      const cv=convQ(c,m.moneda,anio,q); return cv===null?null:cv/u;
     }
-    return conv(rawNivelEn(m,anio,q,nivel,"costo"), m.moneda);
+    return convQ(rawNivelEn(m,anio,q,nivel,"costo"), m.moneda, anio, q);
   }
+  // El total del año = suma de trimestres, cada uno convertido a la TRM de su Q.
   function annualVal(m,anio,nivel,medId){
     if(medId==="unidades") return rawTotalEn(m,anio,nivel,"unidades");
     if(medId==="costoprom"){
-      const c=rawTotalEn(m,anio,nivel,"costo"), u=rawTotalEn(m,anio,nivel,"unidades");
-      if(c===null||u===null||u===0) return null;
-      const cv=conv(c,m.moneda); return cv===null?null:cv/u;
+      let c=0,u=0,any=false;
+      DATA.trimestres.forEach(q=>{const cc=rawNivelEn(m,anio,q,nivel,"costo"),uu=rawNivelEn(m,anio,q,nivel,"unidades");
+        if(cc!==null&&uu!==null){const cv=convQ(cc,m.moneda,anio,q); if(cv!==null){c+=cv;u+=uu;any=true;}}});
+      return (any&&u>0)?c/u:null;
     }
-    return conv(rawTotalEn(m,anio,nivel,"costo"), m.moneda);
+    let s=null; DATA.trimestres.forEach(q=>{const cc=rawNivelEn(m,anio,q,nivel,"costo"); if(cc!==null){const cv=convQ(cc,m.moneda,anio,q); if(cv!==null)s=(s||0)+cv;}}); return s;
   }
   function grpCellVal(brs,anio,q,medId){
     if(medId==="costoprom"){
       let c=0,u=0,any=false;
-      brs.forEach(m=>{const cc=conv(rawNivelEn(m,anio,q,"TOTAL","costo"),m.moneda),uu=rawNivelEn(m,anio,q,"TOTAL","unidades");
-        if(cc!==null&&uu!==null){c+=cc;u+=uu;any=true;}});
+      brs.forEach(m=>{const cc=rawNivelEn(m,anio,q,"TOTAL","costo"),uu=rawNivelEn(m,anio,q,"TOTAL","unidades");
+        if(cc!==null&&uu!==null){const cv=convQ(cc,m.moneda,anio,q); if(cv!==null){c+=cv;u+=uu;any=true;}}});
       return (any&&u>0)?c/u:null;
     }
     if(medId==="unidades"){ let s=null; brs.forEach(m=>{const v=rawNivelEn(m,anio,q,"TOTAL","unidades"); if(v!==null)s=(s||0)+v;}); return s; }
-    let s=null; brs.forEach(m=>{const v=conv(rawNivelEn(m,anio,q,"TOTAL","costo"),m.moneda); if(v!==null)s=(s||0)+v;}); return s;
+    let s=null; brs.forEach(m=>{const cc=rawNivelEn(m,anio,q,"TOTAL","costo"); if(cc!==null){const cv=convQ(cc,m.moneda,anio,q); if(cv!==null)s=(s||0)+cv;}}); return s;
   }
   function grpAnnualVal(brs,anio,medId){
+    if(medId==="unidades"){ let s=null; brs.forEach(m=>{const v=rawTotalEn(m,anio,"TOTAL","unidades"); if(v!==null)s=(s||0)+v;}); return s; }
     if(medId==="costoprom"){
       let c=0,u=0,any=false;
-      brs.forEach(m=>{const cc=conv(rawTotalEn(m,anio,"TOTAL","costo"),m.moneda),uu=rawTotalEn(m,anio,"TOTAL","unidades");
-        if(cc!==null&&uu!==null){c+=cc;u+=uu;any=true;}});
+      brs.forEach(m=>DATA.trimestres.forEach(q=>{const cc=rawNivelEn(m,anio,q,"TOTAL","costo"),uu=rawNivelEn(m,anio,q,"TOTAL","unidades");
+        if(cc!==null&&uu!==null){const cv=convQ(cc,m.moneda,anio,q); if(cv!==null){c+=cv;u+=uu;any=true;}}}));
       return (any&&u>0)?c/u:null;
     }
-    if(medId==="unidades"){ let s=null; brs.forEach(m=>{const v=rawTotalEn(m,anio,"TOTAL","unidades"); if(v!==null)s=(s||0)+v;}); return s; }
-    let s=null; brs.forEach(m=>{const v=conv(rawTotalEn(m,anio,"TOTAL","costo"),m.moneda); if(v!==null)s=(s||0)+v;}); return s;
+    let s=null; brs.forEach(m=>DATA.trimestres.forEach(q=>{const cc=rawNivelEn(m,anio,q,"TOTAL","costo"); if(cc!==null){const cv=convQ(cc,m.moneda,anio,q); if(cv!==null)s=(s||0)+cv;}})); return s;
   }
 
   // ---- PRESUPUESTO (solo consolidado, nivel total; 0/vacio ya viene como null) ----
@@ -414,23 +476,23 @@
     const p=m.ppto && m.ppto[anio] && m.ppto[anio][q];
     if(!p) return null;
     if(medId==="unidades") return (p.unidades==null)?null:p.unidades;
-    if(medId==="costoprom"){ if(p.costo==null||p.unidades==null||p.unidades===0) return null; const cv=conv(p.costo,m.moneda); return cv==null?null:cv/p.unidades; }
-    return conv(p.costo,m.moneda);
+    if(medId==="costoprom"){ if(p.costo==null||p.unidades==null||p.unidades===0) return null; const cv=convQ(p.costo,m.moneda,anio,q); return cv==null?null:cv/p.unidades; }
+    return convQ(p.costo,m.moneda,anio,q);
   }
   function pptoTot(m,anio,medId){
     if(medId==="costoprom"){
       let c=0,u=0,any=false;
-      DATA.trimestres.forEach(q=>{const p=m.ppto&&m.ppto[anio]&&m.ppto[anio][q]; if(p&&p.costo!=null&&p.unidades!=null){c+=conv(p.costo,m.moneda);u+=p.unidades;any=true;}});
+      DATA.trimestres.forEach(q=>{const p=m.ppto&&m.ppto[anio]&&m.ppto[anio][q]; if(p&&p.costo!=null&&p.unidades!=null){const cv=convQ(p.costo,m.moneda,anio,q); if(cv!=null){c+=cv;u+=p.unidades;any=true;}}});
       return (any&&u>0)?c/u:null;
     }
     let s=null; DATA.trimestres.forEach(q=>{const v=pptoCel(m,anio,q,medId); if(v!==null)s=(s||0)+v;}); return s;
   }
   function grpPptoCel(brs,anio,q,medId){
-    if(medId==="costoprom"){ let c=0,u=0,any=false; brs.forEach(m=>{const p=m.ppto&&m.ppto[anio]&&m.ppto[anio][q]; if(p&&p.costo!=null&&p.unidades!=null){c+=conv(p.costo,m.moneda);u+=p.unidades;any=true;}}); return (any&&u>0)?c/u:null; }
+    if(medId==="costoprom"){ let c=0,u=0,any=false; brs.forEach(m=>{const p=m.ppto&&m.ppto[anio]&&m.ppto[anio][q]; if(p&&p.costo!=null&&p.unidades!=null){const cv=convQ(p.costo,m.moneda,anio,q); if(cv!=null){c+=cv;u+=p.unidades;any=true;}}}); return (any&&u>0)?c/u:null; }
     let s=null; brs.forEach(m=>{const v=pptoCel(m,anio,q,medId); if(v!==null)s=(s||0)+v;}); return s;
   }
   function grpPptoTot(brs,anio,medId){
-    if(medId==="costoprom"){ let c=0,u=0,any=false; brs.forEach(m=>{DATA.trimestres.forEach(q=>{const p=m.ppto&&m.ppto[anio]&&m.ppto[anio][q]; if(p&&p.costo!=null&&p.unidades!=null){c+=conv(p.costo,m.moneda);u+=p.unidades;any=true;}});}); return (any&&u>0)?c/u:null; }
+    if(medId==="costoprom"){ let c=0,u=0,any=false; brs.forEach(m=>DATA.trimestres.forEach(q=>{const p=m.ppto&&m.ppto[anio]&&m.ppto[anio][q]; if(p&&p.costo!=null&&p.unidades!=null){const cv=convQ(p.costo,m.moneda,anio,q); if(cv!=null){c+=cv;u+=p.unidades;any=true;}}})); return (any&&u>0)?c/u:null; }
     let s=null; brs.forEach(m=>{const v=pptoTot(m,anio,medId); if(v!==null)s=(s||0)+v;}); return s;
   }
 
@@ -474,6 +536,47 @@
     if(showPpto && cmpP) td.appendChild(miniPct(cmpP.a, cmpP.b));
   }
 
+  // ---- Pestaña TRM ----
+  let vistaTop="informe";
+  function setVistaTop(vt){
+    vistaTop=vt;
+    const informe = (vt==="informe");
+    const disp = informe ? "" : "none";
+    document.querySelector(".filtros").style.display=disp;
+    document.querySelector(".panel").style.display=disp;      // panel del informe
+    document.querySelector(".readout").style.display=disp;
+    const fn=document.querySelectorAll(".footnotes"); if(fn[0]) fn[0].style.display=disp;
+    document.getElementById("trmPanel").hidden=informe;
+    [...document.getElementById("vistaTop").children].forEach(b=>b.setAttribute("aria-pressed", String(b.dataset.vt===vt)));
+    if(!informe) construirGridTRM();
+  }
+  function construirGridTRM(){
+    const anos=["2024","2025","2026","2027"];
+    const body=document.getElementById("trmBody"); if(!body) return;
+    body.innerHTML="";
+    anos.forEach(a=>{
+      const tr=document.createElement("tr");
+      const td0=document.createElement("td"); td0.className="marca-col"; td0.textContent=a; tr.appendChild(td0);
+      DATA.trimestres.forEach(q=>{
+        const td=document.createElement("td");
+        const inp=document.createElement("input");
+        inp.type="number"; inp.className="trm-cell"; inp.min="0"; inp.step="1"; inp.inputMode="numeric";
+        const val = trmGrid[a] && trmGrid[a][q];
+        if(val!=null){ inp.value=val; inp.classList.add("cerrado"); }
+        else { inp.placeholder=String(trmFuturo); }
+        inp.addEventListener("input",e=>{
+          const v=parseFloat(e.target.value);
+          if(!trmGrid[a]) trmGrid[a]={};
+          if(e.target.value===""||isNaN(v)){ delete trmGrid[a][q]; e.target.classList.remove("cerrado"); e.target.placeholder=String(trmFuturo); }
+          else { trmGrid[a][q]=v; e.target.classList.add("cerrado"); }
+          render();   // el informe se recalcula (queda listo al volver)
+        });
+        td.appendChild(inp); tr.appendChild(td);
+      });
+      body.appendChild(tr);
+    });
+  }
+
   function init(data){
     DATA=data;
     medidaActiva=DATA.medidas[0].id;
@@ -498,9 +601,23 @@
     document.getElementById("chkPct").addEventListener("change",e=>{showPct=e.target.checked;render();});
     document.getElementById("chkDif").addEventListener("change",e=>{showDif=e.target.checked;render();});
     document.getElementById("chkPpto").addEventListener("change",e=>{showPpto=e.target.checked;render();});
+    // ---- TRM: futura + grilla de cierres (desde el Excel) ----
+    trmFuturo = (DATA.meta.trm && DATA.meta.trm.futuroDefault) || 3800;
+    trmGrid = {};
+    const cierres = (DATA.meta.trm && DATA.meta.trm.cierres) || {};
+    Object.keys(cierres).forEach(a=>{ trmGrid[a]={...cierres[a]}; });  // copia editable
     const trmEl=document.getElementById("trmInput");
-    trm = parseFloat(trmEl.value)||0;
-    trmEl.addEventListener("input",e=>{ trm=parseFloat(e.target.value)||0; render(); });
+    trmEl.value = trmFuturo;
+    trmEl.addEventListener("input",e=>{
+      trmFuturo = parseFloat(e.target.value)||0;
+      construirGridTRM();   // refresca placeholders de trimestres sin cierre
+      render();
+    });
+    // pestañas Informe / TRM
+    [...document.getElementById("vistaTop").children].forEach(b=>{
+      b.addEventListener("click",()=>setVistaTop(b.dataset.vt));
+    });
+
     const btnP=document.getElementById("btnProyeccion");
     btnP.addEventListener("click",()=>{
       const on=document.body.classList.toggle("proyeccion");
