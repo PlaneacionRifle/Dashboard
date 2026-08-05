@@ -9,8 +9,8 @@
       "2027"
     ],
     "anioActivo": "2026",
-    "generado": "2026-08-05 15:40",
-    "fuenteModificada": "2026-08-05 15:12",
+    "generado": "2026-08-05 15:58",
+    "fuenteModificada": "2026-08-05 15:54",
     "totalMarcas": 7,
     "monedas": [
       "COP",
@@ -1551,7 +1551,62 @@
           }
         }
       },
-      "ppto": {}
+      "ppto": {
+        "2025": {
+          "Q1": {
+            "costo": 21457315906.0,
+            "unidades": 132532.0
+          },
+          "Q2": {
+            "costo": 23186829899.0,
+            "unidades": 148445.0
+          },
+          "Q3": {
+            "costo": 21702322280.0,
+            "unidades": 146724.0
+          },
+          "Q4": {
+            "costo": 31727146763.0,
+            "unidades": 182896.0
+          }
+        },
+        "2026": {
+          "Q1": {
+            "costo": 25588357850.0,
+            "unidades": 158369.0
+          },
+          "Q2": {
+            "costo": 29668789956.0,
+            "unidades": 168942.0
+          },
+          "Q3": {
+            "costo": 26169757738.0,
+            "unidades": 157351.0
+          },
+          "Q4": {
+            "costo": 40689312354.0,
+            "unidades": 220398.0
+          }
+        },
+        "2027": {
+          "Q1": {
+            "costo": 28147193635.0,
+            "unidades": 174206.0
+          },
+          "Q2": {
+            "costo": null,
+            "unidades": null
+          },
+          "Q3": {
+            "costo": null,
+            "unidades": null
+          },
+          "Q4": {
+            "costo": null,
+            "unidades": null
+          }
+        }
+      }
     },
     {
       "nombre": "ViVt",
