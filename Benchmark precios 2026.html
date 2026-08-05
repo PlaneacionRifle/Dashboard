@@ -1226,6 +1226,7 @@ table.matrix td.cell-rifle.count-cell { color: var(--rfl-arena); }
     <button class="tab" data-tab="ponderacion">Ponderación vs Rifle</button>
     <button class="tab" data-tab="oportunidades">Análisis de oportunidades</button>
     <button class="tab" data-tab="general">Análisis general de marca</button>
+    <button class="tab" data-tab="fitsjeans">Fits Jeans</button>
   </div>
 </div>
 
@@ -1514,6 +1515,138 @@ table.matrix td.cell-rifle.count-cell { color: var(--rfl-arena); }
 
 
   <!-- ============ TAB 5: FOCO JEANS ============ -->
+  <!-- ============ TAB: FITS JEANS ============ -->
+  <div class="tab-content" id="tab-fitsjeans">
+    <style>
+      #fj-root{font-family:Arial,Helvetica,sans-serif;color:#0D1B3E;}
+      #fj-root *{box-sizing:border-box;}
+      #fj-root .fj-head{background:#0D1B3E;color:#fff;padding:14px 18px;display:flex;justify-content:space-between;align-items:center;border-radius:6px;margin-bottom:14px;}
+      #fj-root .fj-head .fj-logo{font-family:"Arial Black",Arial;font-weight:900;font-size:18px;letter-spacing:.5px;}
+      #fj-root .fj-head .fj-ttl{text-align:right;}
+      #fj-root .fj-head .fj-ttl b{font-family:"Arial Black",Arial;font-weight:900;font-size:15px;text-transform:uppercase;letter-spacing:.5px;display:block;}
+      #fj-root .fj-head .fj-ttl span{font-size:11px;color:#C9C3BA;}
+      #fj-root .fj-controls{display:flex;gap:24px;flex-wrap:wrap;align-items:center;margin-bottom:12px;}
+      #fj-root .fj-grp{display:flex;align-items:center;gap:8px;}
+      #fj-root .fj-grp .fj-lab{font-size:10px;text-transform:uppercase;letter-spacing:.12em;color:#8A8680;font-weight:bold;}
+      #fj-root .fj-btn{border:1.5px solid #0D1B3E;background:#fff;color:#0D1B3E;font-family:Arial;font-weight:bold;font-size:12px;padding:7px 16px;cursor:pointer;border-radius:2px;}
+      #fj-root .fj-btn.active{background:#0D1B3E;color:#fff;}
+      #fj-root .fj-tablewrap{overflow-x:auto;}
+      #fj-root table.fj-matrix{border-collapse:collapse;width:100%;min-width:1080px;background:#fff;}
+      #fj-root table.fj-matrix th,#fj-root table.fj-matrix td{border:1px solid #E3DED6;text-align:center;padding:0;}
+      #fj-root .fj-brand th{color:#fff;font-family:"Arial Black",Arial;font-weight:900;font-size:12px;text-transform:uppercase;letter-spacing:.06em;padding:9px 4px;}
+      #fj-root .fj-sub th{background:#F0ECE6;color:#8A8680;font-size:9px;text-transform:uppercase;letter-spacing:.06em;padding:4px;font-weight:bold;}
+      #fj-root th.fj-fitcol{background:#0D1B3E;color:#fff;text-align:left;padding-left:14px;font-size:11px;text-transform:uppercase;letter-spacing:.06em;width:132px;}
+      #fj-root td.fj-fit{text-align:left;padding:10px 12px;font-weight:bold;font-size:12.5px;background:#0D1B3E;color:#fff;}
+      #fj-root tbody tr:nth-child(even) td.fj-cell{background:#F7F5F1;}
+      #fj-root td.fj-cell{padding:9px 6px;font-size:12px;vertical-align:middle;}
+      #fj-root td.fj-rifle{background:#F7EDE6 !important;}
+      #fj-root .fj-price{font-weight:bold;font-size:13.5px;}
+      #fj-root .fj-pyr{line-height:1.3;}
+      #fj-root .fj-pyr .p{font-size:11px;}
+      #fj-root .fj-pyr .m{font-size:14px;font-weight:bold;}
+      #fj-root .fj-pyr .b{font-size:11px;}
+      #fj-root .fj-plabel{color:#B7B0A6;font-size:8px;font-weight:bold;}
+      #fj-root .fj-refs{color:#8A8680;font-size:10px;margin-top:2px;}
+      #fj-root .fj-vs{display:inline-block;margin-top:3px;font-size:10.5px;font-weight:bold;padding:1px 5px;border-radius:2px;}
+      #fj-root .fj-vs.pos{color:#196B24;background:#E7F1E8;}
+      #fj-root .fj-vs.neg{color:#B91C1C;background:#F7E7E7;}
+      #fj-root .fj-vs.zero{color:#8A8680;background:#EFECE6;}
+      #fj-root .fj-vsm{display:block;margin-top:4px;font-size:10.5px;font-weight:900;padding:2px 4px;border-radius:2px;border:1px solid;}
+      #fj-root .fj-vsm.pos{color:#196B24;border-color:#196B24;background:#EAF3EB;}
+      #fj-root .fj-vsm.neg{color:#B91C1C;border-color:#B91C1C;background:#FBEDED;}
+      #fj-root .fj-vsm.zero{color:#5b5751;border-color:#C9C3BA;background:#F2EFEA;}
+      #fj-root .fj-vsm.na{color:#8A8680;border-color:#D9D3CA;background:#F2EFEA;}
+      #fj-root .fj-disc{margin-top:4px;font-size:9.5px;font-weight:bold;color:#A1595B;line-height:1.25;}
+      #fj-root .fj-disc.none{color:#9a9690;font-weight:normal;}
+      #fj-root .fj-empty{color:#C9C3BA;font-size:15px;}
+      #fj-root .fj-note{font-size:10.5px;color:#8A8680;margin-top:10px;}
+      #fj-root .fj-legend{font-size:11px;color:#5b5751;line-height:1.7;margin-top:8px;}
+      #fj-root .fj-legend b{color:#0D1B3E;}
+      #fj-root .fj-sig{text-align:right;font-size:9px;letter-spacing:.22em;color:#8A8680;margin-top:8px;}
+    </style>
+    <div id="fj-root">
+      <div class="fj-head">
+        <div class="fj-logo">RFL&reg;</div>
+        <div class="fj-ttl"><b>Matriz de Fits &middot; Jeans 2026</b><span>Rifle vs 6 marcas &middot; referencias disponibles a precio lista &middot; scrape agosto 2026</span></div>
+      </div>
+      <div class="fj-controls">
+        <div class="fj-grp"><span class="fj-lab">G&eacute;nero</span>
+          <button class="fj-btn active" data-fjgen="Mujer">Mujer</button>
+          <button class="fj-btn" data-fjgen="Hombre">Hombre</button>
+        </div>
+        <div class="fj-grp"><span class="fj-lab">Vista</span>
+          <button class="fj-btn active" data-fjview="prom">Precio promedio</button>
+          <button class="fj-btn" data-fjview="pyr">Pir&aacute;mide B/M/P</button>
+        </div>
+      </div>
+      <div class="fj-tablewrap"><table class="fj-matrix" id="fj-matrix"></table></div>
+      <div class="fj-note">Conteo: <b>referencias disponibles</b> valoradas a su <b>precio lista</b> (full price intencional). Outlet/Value de Rifle excluido. El <b>% en descuento</b> y el <b>descuento promedio</b> se reportan aparte, sin sacar la referencia del conteo.</div>
+      <div class="fj-legend"><b>Lectura:</b> cada celda muestra el precio <b>Medio</b> (vista promedio) o la pir&aacute;mide <b>Pico / Medio / Base</b> a precio lista, el n&uacute;mero de <b>refs</b> disponibles, y en letra chica el <b>% de refs en descuento</b> y el <b>descuento promedio</b>. <b>Rifle vs</b> (por competidor) = Medio de Rifle vs ese competidor. <b>vs mercado</b> (en la columna Rifle) = Rifle vs el promedio de la competencia en ese fit. <span class="fj-vs pos">verde +</span> Rifle m&aacute;s caro &middot; <span class="fj-vs neg">rojo &minus;</span> Rifle m&aacute;s barato &middot; <b>&mdash;</b> no compite.</div>
+      <div class="fj-sig">POR RIFLE &middot; PARA COLOMBIA</div>
+    </div>
+    <script>
+    (function(){
+      var COLORS={"Rifle":"#0D1B3E","Color Blue":"#2563EB","Tennis":"#059669","Gef":"#D97706","Arturo Calle":"#78350F","Seven Seven":"#0F766E"};
+      var BRANDS=["Rifle","Color Blue","Tennis","Gef","Arturo Calle","Seven Seven"];
+      var COMPET=["Color Blue","Tennis","Gef","Arturo Calle","Seven Seven"];
+      var FJDATA={
+       "Mujer":{fits:["Magic Up","Magic Up Flare","Flare/Boot Cut","Wide Leg","Straight","Jegging","Skinny","Mom","Trendy"],
+        d:{
+         "Rifle":{"Magic Up":[119.9,179.9,239.8,20,45,42],"Magic Up Flare":[139.9,179.9,189.9,6,17,50],"Flare/Boot Cut":[139.9,199.9,229.9,3,67,50],"Wide Leg":[179.9,209.9,229.9,15,60,40],"Straight":[179.9,199.9,229.9,15,67,41],"Jegging":[149.9,179.9,189.9,13,85,40],"Skinny":[179.9,179.9,179.9,1,100,30],"Mom":[159.9,179.9,209.9,8,100,36],"Trendy":[179.9,199.9,229.9,12,75,41]},
+         "Color Blue":{"Skinny":[159.9,189.9,199.9,28,79,63],"Wide Leg":[199.9,219.9,239.9,23,30,43],"Flare/Boot Cut":[189.9,199.9,219.9,9,67,40],"Trendy":[189.9,199.9,219.9,5,60,40],"Mom":[189.9,199.9,219.9,11,64,41],"Straight":[189.9,199.9,219.9,11,55,51]},
+         "Tennis":{"Mom":[159.9,179.9,229.9,10,90,50],"Straight":[149.9,209.9,299.9,94,91,45],"Trendy":[119.9,209.9,329.9,32,78,44],"Wide Leg":[169.9,229.9,299.9,14,100,39],"Skinny":[139.9,159.9,159.9,6,50,70],"Jegging":[139.9,149.9,159.9,9,44,70]},
+         "Gef":{"Trendy":[190,200,240,10,0,0],"Flare/Boot Cut":[220,220,220,1,0,0],"Wide Leg":[200,200,200,5,0,0],"Straight":[190,190,200,6,0,0],"Skinny":[180,180,180,1,0,0],"Mom":[180,180,180,1,0,0]},
+         "Arturo Calle":{"Straight":[129.9,159.9,170,9,0,0],"Mom":[150,155,160,2,0,0],"Flare/Boot Cut":[159.9,160,169.9,3,0,0],"Trendy":[139.9,160,170,4,0,0],"Skinny":[149.9,150,159.9,4,0,0],"Wide Leg":[139.9,139.9,169.9,3,0,0]},
+         "Seven Seven":{"Wide Leg":[149.9,189.9,239.9,22,100,36],"Mom":[129.9,149.9,189.9,22,100,25],"Straight":[139.9,169.9,219.9,13,100,25],"Trendy":[99.9,169.9,219.9,24,96,27],"Flare/Boot Cut":[139.9,149.9,159.9,19,100,39],"Skinny":[79.9,129.9,149.9,12,100,33]}
+        }},
+       "Hombre":{fits:["Slim","Super Slim","Straight","Classic","Trendy"],
+        d:{
+         "Rifle":{"Slim":[119.9,179.9,209.9,47,64,38],"Straight":[139.9,179.9,229.9,31,52,34],"Classic":[149.9,189,209.9,16,63,37],"Super Slim":[149.9,189.9,209.9,10,60,33],"Trendy":[199.9,209.9,229.9,6,67,38]},
+         "Color Blue":{"Slim":[159.9,199.9,219.9,18,100,47],"Super Slim":[189.9,199.9,199.9,5,100,53],"Classic":[189.9,199.9,199.9,6,100,54],"Straight":[219.9,219.9,239.9,4,0,0]},
+         "Tennis":{"Straight":[179.9,199.9,229.9,41,76,42],"Super Slim":[179.9,199.9,229.9,27,74,40],"Trendy":[179.9,179.9,229.9,7,100,46],"Slim":[209.9,209.9,209.9,1,100,30],"Classic":[229.9,229.9,229.9,1,0,0]},
+         "Gef":{"Trendy":[150,190,220,7,0,0],"Classic":[70,170,210,6,0,0],"Super Slim":[150,150,150,2,0,0],"Straight":[200,200,200,3,0,0]},
+         "Arturo Calle":{"Slim":[99.9,169.9,180,18,0,0],"Classic":[150,169.9,180,20,0,0],"Straight":[99.9,167.9,179.9,21,0,0]},
+         "Seven Seven":{"Straight":[149.9,179.9,199.9,24,100,30],"Trendy":[99.9,189.9,229.9,27,96,32],"Classic":[169.9,179.9,179.9,12,100,38],"Slim":[139.9,169.9,179.9,21,100,41],"Super Slim":[129.9,159.9,179.9,20,100,40]}
+        }}
+      };
+      var GEN="Mujer",VIEW="prom";
+      function fmt(v){return v==null?"&mdash;":"$"+v.toFixed(1)+"k";}
+      function pctTag(pct){if(pct==null)return "";var p=Math.round(pct*100);var cls=p>1?"pos":(p<-1?"neg":"zero");var s=p>0?"+":"";return '<div class="fj-vs '+cls+'">Rifle '+s+p+'%</div>';}
+      function vsMarketTag(rm,fit){if(rm==null)return '<div class="fj-vsm na">vs mercado &mdash;</div>';var ms=COMPET.map(function(b){var r=FJDATA[GEN].d[b][fit];return r?r[1]:null;}).filter(function(x){return x!=null;});if(!ms.length)return "";var avg=ms.reduce(function(a,b){return a+b;},0)/ms.length;var pct=Math.round((rm-avg)/avg*100);var cls=pct>1?"pos":(pct<-1?"neg":"zero");var s=pct>0?"+":"";return '<div class="fj-vsm '+cls+'">vs mercado '+s+pct+'%</div>';}
+      function discLine(pct,avg){if(pct==null)return "";if(pct<=0)return '<div class="fj-disc none">sin descuento</div>';return '<div class="fj-disc">&#127991; '+pct+'% en desc &middot; prom &minus;'+avg+'%</div>';}
+      function render(){
+        var g=FJDATA[GEN],fits=g.fits,d=g.d;
+        var html="<thead><tr class='fj-brand'><th class='fj-fitcol' rowspan='2'>FIT</th>";
+        BRANDS.forEach(function(b){html+='<th style="background:'+COLORS[b]+'">'+b+'</th>';});
+        html+="</tr><tr class='fj-sub'>";
+        BRANDS.forEach(function(b){html+='<th>'+(VIEW==='pyr'?'Pico / Medio / Base':'Medio')+' &middot; refs &middot; % desc</th>';});
+        html+="</tr></thead><tbody>";
+        fits.forEach(function(fit){
+          html+='<tr><td class="fj-fit">'+fit+'</td>';
+          var rr=d["Rifle"][fit];var rm=rr?rr[1]:null;
+          BRANDS.forEach(function(b){
+            var row=d[b][fit];var isR=b==="Rifle";var cls="fj-cell"+(isR?" fj-rifle":"");
+            if(!row){html+='<td class="'+cls+'"><span class="fj-empty">&mdash;</span></td>';return;}
+            var base=row[0],medio=row[1],pico=row[2],refs=row[3],pd=row[4],ad=row[5];var col=COLORS[b];var inner="";
+            if(VIEW==="prom"){inner='<div class="fj-price" style="color:'+col+'">'+fmt(medio)+'</div><div class="fj-refs">'+refs+' refs</div>';}
+            else{inner='<div class="fj-pyr"><div class="p"><span class="fj-plabel">P </span><span style="color:'+col+'">'+fmt(pico)+'</span></div><div class="m"><span style="color:'+col+'">'+fmt(medio)+'</span></div><div class="b"><span class="fj-plabel">B </span><span style="color:'+col+'">'+fmt(base)+'</span></div></div><div class="fj-refs">'+refs+' refs</div>';}
+            if(isR)inner+=vsMarketTag(rm,fit);else inner+=pctTag(rm==null||medio==null?null:(rm-medio)/medio);
+            inner+=discLine(pd,ad);
+            html+='<td class="'+cls+'">'+inner+'</td>';
+          });
+          html+="</tr>";
+        });
+        html+="</tbody>";
+        var el=document.getElementById("fj-matrix");if(el)el.innerHTML=html;
+      }
+      function setActive(attr,val){document.querySelectorAll('#fj-root ['+attr+']').forEach(function(b){b.classList.toggle('active',b.getAttribute(attr)===val);});}
+      document.querySelectorAll('#fj-root [data-fjgen]').forEach(function(b){b.addEventListener('click',function(){GEN=b.getAttribute('data-fjgen');setActive('data-fjgen',GEN);render();});});
+      document.querySelectorAll('#fj-root [data-fjview]').forEach(function(b){b.addEventListener('click',function(){VIEW=b.getAttribute('data-fjview');setActive('data-fjview',VIEW);render();});});
+      render();
+    })();
+    </script>
+  </div>
+
   
 
 </div>
