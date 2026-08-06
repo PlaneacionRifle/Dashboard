@@ -9,8 +9,8 @@
       "2027"
     ],
     "anioActivo": "2026",
-    "generado": "2026-08-06 08:00",
-    "fuenteModificada": "2026-08-06 07:41",
+    "generado": "2026-08-06 08:12",
+    "fuenteModificada": "2026-08-06 08:04",
     "totalMarcas": 7,
     "monedas": [
       "COP",
@@ -72,11 +72,11 @@
           "Q1": {
             "TOTAL": {
               "costo": 13620861559.0,
-              "unidades": 389416.0
+              "unidades": 389415.0
             },
             "ICONICO": {
               "costo": 7908202383.0,
-              "unidades": 229144.0
+              "unidades": 229143.0
             },
             "MODA": {
               "costo": 5712659176.0,
@@ -315,11 +315,11 @@
           "Q1": {
             "TOTAL": {
               "costo": 18677758754.3806,
-              "unidades": 377333.0
+              "unidades": 377332.0
             },
             "BASICO": {
               "costo": 4518629626.7991,
-              "unidades": 98022.0
+              "unidades": 98021.0
             },
             "COLECCIÓN": {
               "costo": 12288403421.724,
@@ -606,11 +606,11 @@
           "Q1": {
             "TOTAL": {
               "costo": 2883914.810000002,
-              "unidades": 362823.0
+              "unidades": 362822.0
             },
             "Core": {
               "costo": 1421116.5600000017,
-              "unidades": 181964.0
+              "unidades": 181963.0
             },
             "Core Fashion": {
               "costo": 1004918.9099999998,
@@ -915,11 +915,11 @@
           "Q3": {
             "TOTAL": {
               "costo": 1857431360.7284,
-              "unidades": 43744.0
+              "unidades": 43743.0
             },
             "MODA": {
               "costo": 1857431360.7284,
-              "unidades": 43744.0
+              "unidades": 43743.0
             }
           },
           "Q4": {
@@ -1090,11 +1090,11 @@
           "Q1": {
             "TOTAL": {
               "costo": 1349538.310775892,
-              "unidades": 124264.0
+              "unidades": 124265.0
             },
             "Ecuador": {
               "costo": 450217.68000000005,
-              "unidades": 39342.0
+              "unidades": 39343.0
             },
             "Guatemala": {
               "costo": 899320.6307758921,
@@ -1380,11 +1380,11 @@
           "Q1": {
             "TOTAL": {
               "costo": 15420890230.619999,
-              "unidades": 201490.0
+              "unidades": 201489.0
             },
             "BASICOS": {
               "costo": 11784837047.4,
-              "unidades": 162154.0
+              "unidades": 162153.0
             },
             "MODA": {
               "costo": 3636053183.22,
@@ -1622,7 +1622,7 @@
           "Q1": {
             "TOTAL": {
               "costo": 627614031.0,
-              "unidades": 11824.0
+              "unidades": 11823.0
             },
             "ICONICO": {
               "costo": 0.0,
@@ -1630,7 +1630,7 @@
             },
             "MODA": {
               "costo": 627614031.0,
-              "unidades": 11824.0
+              "unidades": 11823.0
             }
           },
           "Q2": {
