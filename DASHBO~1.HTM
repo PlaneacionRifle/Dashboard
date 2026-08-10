@@ -979,6 +979,38 @@ function altoDelContenido(dentro) {
   return Math.ceil(fondo);
 }
 
+/* Naf Naf guarda su contenido en marcos DENTRO del informe, asi que el problema
+   del alto se repite un nivel mas abajo: el marco de dentro se queda corto, el
+   informe parece medir 468 px y quedan 416 px vacios.
+
+   Aqui se estiran esos marcos anidados a la medida de su propio contenido, antes
+   de medir el informe. Cada uno lleva su contador para que no se estire sin fin. */
+function estirarAnidados(dentro) {
+  var marcos = dentro.querySelectorAll('iframe');
+  for (var i = 0; i < marcos.length; i++) {
+    var fr = marcos[i];
+    var veces = +(fr.getAttribute('data-cel-veces') || 0);
+    if (veces >= 8) continue;
+    var sub = null;
+    try { sub = fr.contentDocument; } catch (e) { continue; }
+    if (!sub || !sub.body) continue;
+    var alto = altoDelContenido(sub);
+    if (!alto) continue;
+    var actual = parseFloat(fr.style.height) || fr.clientHeight || 0;
+    if (Math.abs(alto - actual) <= TOLERANCIA_ALTO) continue;
+    /* la caja que lo contiene tiene que poder crecer, o recortaria igual */
+    var caja = fr.parentElement, saltos = 0;
+    while (caja && caja !== dentro.body && saltos < 3) {
+      caja.style.setProperty('height', 'auto', 'important');
+      caja.style.setProperty('max-height', 'none', 'important');
+      caja.style.setProperty('overflow', 'visible', 'important');
+      caja = caja.parentElement; saltos++;
+    }
+    fr.style.setProperty('height', (alto + 2) + 'px', 'important');
+    fr.setAttribute('data-cel-veces', veces + 1);
+  }
+}
+
 function ajustarAltoMovil() {
   if (ajustandoAlto) return;
   if (window.innerWidth > 700) { frame.style.height = ''; return; }
@@ -986,6 +1018,7 @@ function ajustarAltoMovil() {
   var dentro = null;
   try { dentro = frame.contentDocument; } catch (e) { return; }
   if (!dentro || !dentro.body) return;
+  estirarAnidados(dentro);
   var alto = altoDelContenido(dentro);
   if (!alto) return;
   var actual = parseFloat(frame.style.height) || 0;
