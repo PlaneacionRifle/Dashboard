@@ -929,26 +929,64 @@ function volverAlPanel() {
    Se vuelve a medir cuando el informe se redibuja -al filtrar o cambiar de
    pestaña, el alto cambia- y al girar el telefono. En pantalla de computador no
    se toca nada: ahi el marco sigue ocupando el alto de la ventana. */
+var vigilanteAlto = null;
+var ajustesAlto = 0;
+var ajustandoAlto = false;
+
+/* FRENOS, y no son un adorno: sin ellos esto se convierte en un bucle que
+   congela el telefono. La cadena es: se fija el alto del marco -> el informe
+   reacomoda su contenido -> el vigia ve el cambio -> vuelve a fijar el alto...
+   Ya me paso: dejo el navegador sin responder.
+
+   Tres frenos:
+     1. tolerancia de 12 px: diferencias menores no valen un reajuste;
+     2. tope de 12 ajustes por informe, que se reinicia al abrir otra marca;
+     3. el vigia se apaga mientras se aplica el cambio, para no oirse a si mismo. */
+var TOLERANCIA_ALTO = 12;
+var MAX_AJUSTES_ALTO = 12;
+
 function ajustarAltoMovil() {
+  if (ajustandoAlto) return;
   if (window.innerWidth > 700) { frame.style.height = ''; return; }
+  if (ajustesAlto >= MAX_AJUSTES_ALTO) return;
   var dentro = null;
   try { dentro = frame.contentDocument; } catch (e) { return; }
   if (!dentro || !dentro.body) return;
   var alto = Math.max(dentro.documentElement.scrollHeight, dentro.body.scrollHeight);
   if (!alto) return;
-  /* el margen de 2 px evita que quede una barra por redondeo del navegador */
-  var nuevo = (alto + 2) + 'px';
-  if (frame.style.height !== nuevo) frame.style.height = nuevo;
-}
+  var actual = parseFloat(frame.style.height) || 0;
+  if (Math.abs(alto - actual) <= TOLERANCIA_ALTO) return;
 
-var vigilanteAlto = null;
+  ajustandoAlto = true;
+  if (vigilanteAlto) vigilanteAlto.disconnect();
+  frame.style.height = (alto + 2) + 'px';
+  ajustesAlto++;
+  /* se vuelve a escuchar en el siguiente ciclo, ya con el alto aplicado */
+  setTimeout(function () {
+    ajustandoAlto = false;
+    try {
+      if (vigilanteAlto && frame.contentDocument && frame.contentDocument.body) {
+        vigilanteAlto.observe(frame.contentDocument.body,
+          { childList: true, subtree: true });
+      }
+    } catch (e) { /* el informe cambio de documento: se rehace en su load */ }
+  }, 120);
+}
 
 frame.addEventListener('load', () => {
   loading.classList.add('hidden');
   sincronizarEmbebido();
+
+  /* cada informe empieza con su cupo de ajustes completo */
+  ajustesAlto = 0;
+  ajustandoAlto = false;
+  frame.style.height = '';
   ajustarAltoMovil();
 
-  /* el informe se redibuja al filtrar: hay que volver a medirlo */
+  /* El informe se redibuja al filtrar y al cambiar de pestaña, y ahi cambia de
+     alto. Se vigila solo la estructura -childList y subtree-, NO los atributos:
+     vigilar atributos hacia que el propio cambio de alto se contara como
+     novedad, y de ahi salia el bucle. */
   try {
     if (vigilanteAlto) vigilanteAlto.disconnect();
     var dentro = frame.contentDocument;
@@ -956,19 +994,21 @@ frame.addEventListener('load', () => {
       var espera = null;
       vigilanteAlto = new MutationObserver(function () {
         clearTimeout(espera);
-        espera = setTimeout(ajustarAltoMovil, 250);
+        espera = setTimeout(ajustarAltoMovil, 300);
       });
-      vigilanteAlto.observe(dentro.body, { childList: true, subtree: true,
-                                           attributes: true });
+      vigilanteAlto.observe(dentro.body, { childList: true, subtree: true });
+      /* al mover un filtro se recalcula todo: ahi si conviene volver a medir,
+         y se le devuelve cupo porque es una accion de la persona, no un rebote */
       dentro.addEventListener('change', function () {
-        setTimeout(ajustarAltoMovil, 350);
+        ajustesAlto = Math.max(0, ajustesAlto - 3);
+        setTimeout(ajustarAltoMovil, 400);
       }, true);
     }
   } catch (e) { /* si el informe no se puede inspeccionar, queda el alto por CSS */ }
 
   /* dos repasos: los graficos y las tablas terminan de dibujarse despues */
-  setTimeout(ajustarAltoMovil, 600);
-  setTimeout(ajustarAltoMovil, 1600);
+  setTimeout(ajustarAltoMovil, 700);
+  setTimeout(ajustarAltoMovil, 1800);
 });
 
 window.addEventListener('resize', ajustarAltoMovil);
