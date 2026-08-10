@@ -589,7 +589,12 @@ const MARCAS = [
     id: "rifle",
     nombre: "RIFLE",
     url: "embed:rifle",
-    urlWeb: "https://planeacionrifle.github.io/Dashboard/Benchmark%20precios%202026.html",
+    /* Sin urlWeb a proposito. Era lo que hacia aparecer el boton "Ver version
+       publicada" en la barra de Rifle, y solo en Rifle. Retirado por decision de
+       Planeacion el 10-ago-2026: el informe de Rifle ya esta dentro de este
+       archivo, asi que mandar a otra direccion no aporta y descuadra la barra en
+       el celular. La direccion queda anotada aqui por si algun dia se necesita:
+       planeacionrifle.github.io/Dashboard/Benchmark%20precios%202026.html */
     hosting: "publicado",
     color: "#12284C",
     hallazgos: [
@@ -930,6 +935,7 @@ function volverAlPanel() {
    pestaña, el alto cambia- y al girar el telefono. En pantalla de computador no
    se toca nada: ahi el marco sigue ocupando el alto de la ventana. */
 var vigilanteAlto = null;
+var vigilanteTamano = null;
 var ajustesAlto = 0;
 var ajustandoAlto = false;
 
@@ -945,6 +951,34 @@ var ajustandoAlto = false;
 var TOLERANCIA_ALTO = 12;
 var MAX_AJUSTES_ALTO = 12;
 
+/* Cuanto mide DE VERDAD el contenido del informe.
+
+   No se usa scrollHeight, y hay una razon concreta: un marco no encoge. El
+   cuerpo del informe se estira para llenar el marco, asi que su scrollHeight
+   nunca baja del alto que el marco ya tiene. Al pasar de "Estudio de precios"
+   -larga- a "Ponderaciones" -corta-, el marco se quedaba con el alto de la
+   primera y sobraba un tramo en blanco que se seguia bajando sin nada que ver.
+
+   Aqui se mide el borde inferior del ultimo bloque con contenido. Esa medida no
+   depende del alto del marco, asi que sirve tanto para crecer como para encoger. */
+function altoDelContenido(dentro) {
+  var hijos = dentro.body.children;
+  var fondo = 0;
+  for (var i = 0; i < hijos.length; i++) {
+    var el = hijos[i];
+    var caja = el.getBoundingClientRect();
+    if (caja.height === 0) continue;                 /* ocultos, no cuentan */
+    var estilo = dentro.defaultView.getComputedStyle(el);
+    if (estilo.position === 'fixed') continue;       /* botones flotantes */
+    var margen = parseFloat(estilo.marginBottom) || 0;
+    fondo = Math.max(fondo, caja.bottom + dentro.documentElement.scrollTop + margen);
+  }
+  /* red de seguridad: si por alguna razon no se pudo medir, se usa el metodo viejo */
+  if (fondo < 80) fondo = Math.max(dentro.documentElement.scrollHeight,
+                                   dentro.body.scrollHeight);
+  return Math.ceil(fondo);
+}
+
 function ajustarAltoMovil() {
   if (ajustandoAlto) return;
   if (window.innerWidth > 700) { frame.style.height = ''; return; }
@@ -952,7 +986,7 @@ function ajustarAltoMovil() {
   var dentro = null;
   try { dentro = frame.contentDocument; } catch (e) { return; }
   if (!dentro || !dentro.body) return;
-  var alto = Math.max(dentro.documentElement.scrollHeight, dentro.body.scrollHeight);
+  var alto = altoDelContenido(dentro);
   if (!alto) return;
   var actual = parseFloat(frame.style.height) || 0;
   if (Math.abs(alto - actual) <= TOLERANCIA_ALTO) return;
@@ -997,18 +1031,50 @@ frame.addEventListener('load', () => {
         espera = setTimeout(ajustarAltoMovil, 300);
       });
       vigilanteAlto.observe(dentro.body, { childList: true, subtree: true });
+
+      /* VIGILANTE DE TAMAÑO, y hace falta de verdad: los graficos de Vivant se
+         pintan en un lienzo, y pintar NO cambia el HTML. El vigia de estructura
+         no se enteraba de que el informe habia crecido y quedaban 195 px del
+         final escondidos. Este observador si detecta que el documento cambio de
+         tamaño, aunque no se haya tocado una sola etiqueta. */
+      if (window.ResizeObserver) {
+        if (vigilanteTamano) vigilanteTamano.disconnect();
+        var esperaT = null;
+        vigilanteTamano = new ResizeObserver(function () {
+          /* si el cambio de tamaño lo acabo de provocar yo, no se responde: es
+             lo que producia el aviso "ResizeObserver loop" del navegador */
+          if (ajustandoAlto) return;
+          clearTimeout(esperaT);
+          esperaT = setTimeout(ajustarAltoMovil, 250);
+        });
+        vigilanteTamano.observe(dentro.documentElement);
+        vigilanteTamano.observe(dentro.body);
+      }
+
       /* al mover un filtro se recalcula todo: ahi si conviene volver a medir,
          y se le devuelve cupo porque es una accion de la persona, no un rebote */
-      dentro.addEventListener('change', function () {
-        ajustesAlto = Math.max(0, ajustesAlto - 3);
+      /* Filtrar o cambiar de pestaña son acciones de la persona, no rebotes del
+         propio ajuste: ahi se devuelve cupo y se vuelve a medir. Sin esto, el
+         tope de ajustes podia agotarse y la pestaña nueva se quedaba con el alto
+         de la anterior. */
+      var remedir = function () {
+        ajustesAlto = Math.max(0, ajustesAlto - 4);
         setTimeout(ajustarAltoMovil, 400);
-      }, true);
+        setTimeout(ajustarAltoMovil, 1200);
+      };
+      dentro.addEventListener('change', remedir, true);
+      dentro.addEventListener('click', remedir, true);
     }
   } catch (e) { /* si el informe no se puede inspeccionar, queda el alto por CSS */ }
 
-  /* dos repasos: los graficos y las tablas terminan de dibujarse despues */
+  /* Repasos escalonados: las tablas y los graficos terminan de dibujarse
+     bastante despues del load, y los de lienzo hasta varios segundos. Cada
+     repaso pasa por los mismos frenos, asi que si ya esta a la medida no hace
+     nada. */
   setTimeout(ajustarAltoMovil, 700);
   setTimeout(ajustarAltoMovil, 1800);
+  setTimeout(ajustarAltoMovil, 3200);
+  setTimeout(ajustarAltoMovil, 5200);
 });
 
 window.addEventListener('resize', ajustarAltoMovil);
