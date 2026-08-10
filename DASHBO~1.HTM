@@ -329,7 +329,16 @@ a.card, a.card:visited, a.card:hover { text-decoration: none; color: inherit; }
   /* El visor de marca necesita su propio alto: ya no puede tomarlo de un body
      de altura fija. */
   #view-viewer.active { min-height: 100vh; min-height: 100dvh; }
-  .frame-wrap { min-height: 70vh; min-height: 70dvh; }
+
+  /* EL MARCO CRECE CON SU CONTENIDO, NO AL CONTRARIO.
+     Antes: .frame-wrap tenía min-height:70dvh y #brandFrame height:100%. El
+     informe quedaba encerrado en una caja del 70% de la pantalla y se recorría
+     DENTRO de ella: en el teléfono se veía un cuadrito con los filtros y el
+     resto había que bajarlo con un desplazamiento aparte, como si no hubiera
+     cargado. Ahora el marco toma el alto de su informe y la que se desplaza es
+     la página completa, de corrido. El alto lo pone ajustarAltoMovil(). */
+  .frame-wrap { min-height: 0; height: auto; flex: none; overflow: visible; }
+  #brandFrame { height: auto; min-height: 60dvh; }
 
   /* La cabecera pasa a dos líneas: marca arriba, título debajo. En una sola
      línea el logo y el botón se comían el título. */
@@ -910,9 +919,61 @@ function volverAlPanel() {
   recordarEnDireccion(null);
 }
 
+/* ---------- El marco del informe, a la altura de su contenido ----------
+   En el celular, un marco de altura fija encierra el informe y lo obliga a
+   recorrerse por dentro: se ve un cuadrito con los filtros y el resto parece no
+   haber cargado. Un marco no se estira solo, asi que aqui se le mide el alto al
+   informe y se le pone al marco. La pagina queda con un unico desplazamiento,
+   de corrido, como debe ser en un telefono.
+
+   Se vuelve a medir cuando el informe se redibuja -al filtrar o cambiar de
+   pestaña, el alto cambia- y al girar el telefono. En pantalla de computador no
+   se toca nada: ahi el marco sigue ocupando el alto de la ventana. */
+function ajustarAltoMovil() {
+  if (window.innerWidth > 700) { frame.style.height = ''; return; }
+  var dentro = null;
+  try { dentro = frame.contentDocument; } catch (e) { return; }
+  if (!dentro || !dentro.body) return;
+  var alto = Math.max(dentro.documentElement.scrollHeight, dentro.body.scrollHeight);
+  if (!alto) return;
+  /* el margen de 2 px evita que quede una barra por redondeo del navegador */
+  var nuevo = (alto + 2) + 'px';
+  if (frame.style.height !== nuevo) frame.style.height = nuevo;
+}
+
+var vigilanteAlto = null;
+
 frame.addEventListener('load', () => {
   loading.classList.add('hidden');
   sincronizarEmbebido();
+  ajustarAltoMovil();
+
+  /* el informe se redibuja al filtrar: hay que volver a medirlo */
+  try {
+    if (vigilanteAlto) vigilanteAlto.disconnect();
+    var dentro = frame.contentDocument;
+    if (dentro && dentro.body) {
+      var espera = null;
+      vigilanteAlto = new MutationObserver(function () {
+        clearTimeout(espera);
+        espera = setTimeout(ajustarAltoMovil, 250);
+      });
+      vigilanteAlto.observe(dentro.body, { childList: true, subtree: true,
+                                           attributes: true });
+      dentro.addEventListener('change', function () {
+        setTimeout(ajustarAltoMovil, 350);
+      }, true);
+    }
+  } catch (e) { /* si el informe no se puede inspeccionar, queda el alto por CSS */ }
+
+  /* dos repasos: los graficos y las tablas terminan de dibujarse despues */
+  setTimeout(ajustarAltoMovil, 600);
+  setTimeout(ajustarAltoMovil, 1600);
+});
+
+window.addEventListener('resize', ajustarAltoMovil);
+window.addEventListener('orientationchange', function () {
+  setTimeout(ajustarAltoMovil, 300);
 });
 
 /* Enlace directo por hash + botón atrás del navegador */
@@ -5460,10 +5521,21 @@ function volverAlPanel(){try{if(window.parent&&window.parent!==window&&window.pa
       '.desc-wrap,.cel-scroll{max-width:100% !important;overflow-x:auto !important;',
       '-webkit-overflow-scrolling:touch}',
       'html,body{overflow-x:hidden !important;max-width:100% !important}',
+      /* El informe debe poder crecer a lo alto. Si su documento se queda en el
+         alto de la ventana, el hub lo mide corto y vuelve a aparecer el
+         desplazamiento interno: un cuadrito con los filtros y el resto
+         escondido. Con alto automatico, el marco toma la medida completa. */
+      'html,body{height:auto !important;min-height:0 !important;',
+      'overflow-y:visible !important}',
       /* los filtros, a lo ancho y en tamaño de dedo: aqui SI funcionan, porque
          el navegador del telefono ejecuta JavaScript */
-      '.filters{flex-wrap:wrap !important;gap:8px !important;padding:10px !important}',
-      '.filter-group{flex:1 1 140px !important;min-width:0 !important}',
+      /* Cada filtro ocupa su propio renglon completo. Comprobado en el celular:
+         con dos por renglon, el de Categoria cruzaba el borde de la pantalla.
+         Asi los tres quedan en 335 px y ninguno se sale. */
+      '.filters{display:flex !important;flex-wrap:wrap !important;gap:8px !important;',
+      'padding:10px !important}',
+      '.filter-group{flex:1 1 100% !important;flex-wrap:wrap !important;min-width:0 !important}',
+      '.filter-label{flex:0 0 100% !important}',
       /* El desplegable se pasaba 25 px de la pantalla: con width:100% el relleno
          y el borde se SUMAN al ancho si no se declara box-sizing. */
       '.filters,.filter-group,.filter-select{box-sizing:border-box !important;',
@@ -6393,9 +6465,42 @@ function volverAlPanel(){try{if(window.parent&&window.parent!==window&&window.pa
     } catch (e) { /* si no se puede consultar, se deja sin marcar */ }
   }
 
+  /* ---------------- rejillas de KPI en pantalla de celular ----------------
+     En un telefono, la fila de KPI conserva sus seis columnas de escritorio:
+     cada tarjeta queda en 53 px con 87 px de contenido, el texto se sale y
+     estira la pagina 25 px de mas.
+
+     Esto NO se puede arreglar con hoja de estilos: el informe escribe
+     'grid-template-columns: repeat(6, ...) !important' en el atributo style del
+     propio elemento, y un estilo en linea con !important gana a cualquier regla.
+     Solo se puede cambiar desde codigo, y eso se hace aqui.
+
+     Se pasa a dos columnas y se guarda el valor original, para que al volver a
+     una pantalla ancha quede exactamente como estaba. Nada de esto toca cifras. */
+  function rejillasCelular() {
+    var celular = window.innerWidth <= 700;
+    var nodos = document.querySelectorAll('[style*="grid-template-columns"]');
+    for (var i = 0; i < nodos.length; i++) {
+      var el = nodos[i];
+      var actual = el.style.getPropertyValue('grid-template-columns');
+      if (el.getAttribute('data-rfl-cols') === null) {
+        var m = /repeat\((\d+)/.exec(actual);
+        if (!m || +m[1] <= 2) continue;          /* dos o menos ya cabe */
+        el.setAttribute('data-rfl-cols', actual);
+      }
+      var original = el.getAttribute('data-rfl-cols');
+      var quiere = celular ? 'repeat(2, minmax(0px, 1fr))' : original;
+      if (actual !== quiere) {
+        el.style.setProperty('grid-template-columns', quiere, 'important');
+      }
+    }
+  }
+
   function iniciar() {
     marcarAnidado();
     marcarContenedor();
+    rejillasCelular();
+    window.addEventListener('resize', rejillasCelular);
     inyectarEstilos();
     crearBoton();
     escucharMensajes();
@@ -6427,6 +6532,7 @@ function volverAlPanel(){try{if(window.parent&&window.parent!==window&&window.pa
         bandasNafNaf();
         cabeceraReact();
         estirarMarcos();
+        rejillasCelular();
         corregirContraste(activo ? MIN_PROJ : MIN_RATIO);
         vigilarMarcos();
         instalarEnMarcos();
@@ -10683,10 +10789,21 @@ renderAll();
       '.desc-wrap,.cel-scroll{max-width:100% !important;overflow-x:auto !important;',
       '-webkit-overflow-scrolling:touch}',
       'html,body{overflow-x:hidden !important;max-width:100% !important}',
+      /* El informe debe poder crecer a lo alto. Si su documento se queda en el
+         alto de la ventana, el hub lo mide corto y vuelve a aparecer el
+         desplazamiento interno: un cuadrito con los filtros y el resto
+         escondido. Con alto automatico, el marco toma la medida completa. */
+      'html,body{height:auto !important;min-height:0 !important;',
+      'overflow-y:visible !important}',
       /* los filtros, a lo ancho y en tamaño de dedo: aqui SI funcionan, porque
          el navegador del telefono ejecuta JavaScript */
-      '.filters{flex-wrap:wrap !important;gap:8px !important;padding:10px !important}',
-      '.filter-group{flex:1 1 140px !important;min-width:0 !important}',
+      /* Cada filtro ocupa su propio renglon completo. Comprobado en el celular:
+         con dos por renglon, el de Categoria cruzaba el borde de la pantalla.
+         Asi los tres quedan en 335 px y ninguno se sale. */
+      '.filters{display:flex !important;flex-wrap:wrap !important;gap:8px !important;',
+      'padding:10px !important}',
+      '.filter-group{flex:1 1 100% !important;flex-wrap:wrap !important;min-width:0 !important}',
+      '.filter-label{flex:0 0 100% !important}',
       /* El desplegable se pasaba 25 px de la pantalla: con width:100% el relleno
          y el borde se SUMAN al ancho si no se declara box-sizing. */
       '.filters,.filter-group,.filter-select{box-sizing:border-box !important;',
@@ -11616,9 +11733,42 @@ renderAll();
     } catch (e) { /* si no se puede consultar, se deja sin marcar */ }
   }
 
+  /* ---------------- rejillas de KPI en pantalla de celular ----------------
+     En un telefono, la fila de KPI conserva sus seis columnas de escritorio:
+     cada tarjeta queda en 53 px con 87 px de contenido, el texto se sale y
+     estira la pagina 25 px de mas.
+
+     Esto NO se puede arreglar con hoja de estilos: el informe escribe
+     'grid-template-columns: repeat(6, ...) !important' en el atributo style del
+     propio elemento, y un estilo en linea con !important gana a cualquier regla.
+     Solo se puede cambiar desde codigo, y eso se hace aqui.
+
+     Se pasa a dos columnas y se guarda el valor original, para que al volver a
+     una pantalla ancha quede exactamente como estaba. Nada de esto toca cifras. */
+  function rejillasCelular() {
+    var celular = window.innerWidth <= 700;
+    var nodos = document.querySelectorAll('[style*=&quot;grid-template-columns&quot;]');
+    for (var i = 0; i < nodos.length; i++) {
+      var el = nodos[i];
+      var actual = el.style.getPropertyValue('grid-template-columns');
+      if (el.getAttribute('data-rfl-cols') === null) {
+        var m = /repeat\((\d+)/.exec(actual);
+        if (!m || +m[1] <= 2) continue;          /* dos o menos ya cabe */
+        el.setAttribute('data-rfl-cols', actual);
+      }
+      var original = el.getAttribute('data-rfl-cols');
+      var quiere = celular ? 'repeat(2, minmax(0px, 1fr))' : original;
+      if (actual !== quiere) {
+        el.style.setProperty('grid-template-columns', quiere, 'important');
+      }
+    }
+  }
+
   function iniciar() {
     marcarAnidado();
     marcarContenedor();
+    rejillasCelular();
+    window.addEventListener('resize', rejillasCelular);
     inyectarEstilos();
     crearBoton();
     escucharMensajes();
@@ -11650,6 +11800,7 @@ renderAll();
         bandasNafNaf();
         cabeceraReact();
         estirarMarcos();
+        rejillasCelular();
         corregirContraste(activo ? MIN_PROJ : MIN_RATIO);
         vigilarMarcos();
         instalarEnMarcos();
@@ -15318,10 +15469,21 @@ function volverAlPanel(){try{if(window.parent&&window.parent!==window){if(typeof
       '.desc-wrap,.cel-scroll{max-width:100% !important;overflow-x:auto !important;',
       '-webkit-overflow-scrolling:touch}',
       'html,body{overflow-x:hidden !important;max-width:100% !important}',
+      /* El informe debe poder crecer a lo alto. Si su documento se queda en el
+         alto de la ventana, el hub lo mide corto y vuelve a aparecer el
+         desplazamiento interno: un cuadrito con los filtros y el resto
+         escondido. Con alto automatico, el marco toma la medida completa. */
+      'html,body{height:auto !important;min-height:0 !important;',
+      'overflow-y:visible !important}',
       /* los filtros, a lo ancho y en tamaño de dedo: aqui SI funcionan, porque
          el navegador del telefono ejecuta JavaScript */
-      '.filters{flex-wrap:wrap !important;gap:8px !important;padding:10px !important}',
-      '.filter-group{flex:1 1 140px !important;min-width:0 !important}',
+      /* Cada filtro ocupa su propio renglon completo. Comprobado en el celular:
+         con dos por renglon, el de Categoria cruzaba el borde de la pantalla.
+         Asi los tres quedan en 335 px y ninguno se sale. */
+      '.filters{display:flex !important;flex-wrap:wrap !important;gap:8px !important;',
+      'padding:10px !important}',
+      '.filter-group{flex:1 1 100% !important;flex-wrap:wrap !important;min-width:0 !important}',
+      '.filter-label{flex:0 0 100% !important}',
       /* El desplegable se pasaba 25 px de la pantalla: con width:100% el relleno
          y el borde se SUMAN al ancho si no se declara box-sizing. */
       '.filters,.filter-group,.filter-select{box-sizing:border-box !important;',
@@ -16251,9 +16413,42 @@ function volverAlPanel(){try{if(window.parent&&window.parent!==window){if(typeof
     } catch (e) { /* si no se puede consultar, se deja sin marcar */ }
   }
 
+  /* ---------------- rejillas de KPI en pantalla de celular ----------------
+     En un telefono, la fila de KPI conserva sus seis columnas de escritorio:
+     cada tarjeta queda en 53 px con 87 px de contenido, el texto se sale y
+     estira la pagina 25 px de mas.
+
+     Esto NO se puede arreglar con hoja de estilos: el informe escribe
+     'grid-template-columns: repeat(6, ...) !important' en el atributo style del
+     propio elemento, y un estilo en linea con !important gana a cualquier regla.
+     Solo se puede cambiar desde codigo, y eso se hace aqui.
+
+     Se pasa a dos columnas y se guarda el valor original, para que al volver a
+     una pantalla ancha quede exactamente como estaba. Nada de esto toca cifras. */
+  function rejillasCelular() {
+    var celular = window.innerWidth <= 700;
+    var nodos = document.querySelectorAll('[style*="grid-template-columns"]');
+    for (var i = 0; i < nodos.length; i++) {
+      var el = nodos[i];
+      var actual = el.style.getPropertyValue('grid-template-columns');
+      if (el.getAttribute('data-rfl-cols') === null) {
+        var m = /repeat\((\d+)/.exec(actual);
+        if (!m || +m[1] <= 2) continue;          /* dos o menos ya cabe */
+        el.setAttribute('data-rfl-cols', actual);
+      }
+      var original = el.getAttribute('data-rfl-cols');
+      var quiere = celular ? 'repeat(2, minmax(0px, 1fr))' : original;
+      if (actual !== quiere) {
+        el.style.setProperty('grid-template-columns', quiere, 'important');
+      }
+    }
+  }
+
   function iniciar() {
     marcarAnidado();
     marcarContenedor();
+    rejillasCelular();
+    window.addEventListener('resize', rejillasCelular);
     inyectarEstilos();
     crearBoton();
     escucharMensajes();
@@ -16285,6 +16480,7 @@ function volverAlPanel(){try{if(window.parent&&window.parent!==window){if(typeof
         bandasNafNaf();
         cabeceraReact();
         estirarMarcos();
+        rejillasCelular();
         corregirContraste(activo ? MIN_PROJ : MIN_RATIO);
         vigilarMarcos();
         instalarEnMarcos();
@@ -20819,10 +21015,21 @@ function volverAlPanel(){try{if(window.parent&&window.parent!==window&&window.pa
       '.desc-wrap,.cel-scroll{max-width:100% !important;overflow-x:auto !important;',
       '-webkit-overflow-scrolling:touch}',
       'html,body{overflow-x:hidden !important;max-width:100% !important}',
+      /* El informe debe poder crecer a lo alto. Si su documento se queda en el
+         alto de la ventana, el hub lo mide corto y vuelve a aparecer el
+         desplazamiento interno: un cuadrito con los filtros y el resto
+         escondido. Con alto automatico, el marco toma la medida completa. */
+      'html,body{height:auto !important;min-height:0 !important;',
+      'overflow-y:visible !important}',
       /* los filtros, a lo ancho y en tamaño de dedo: aqui SI funcionan, porque
          el navegador del telefono ejecuta JavaScript */
-      '.filters{flex-wrap:wrap !important;gap:8px !important;padding:10px !important}',
-      '.filter-group{flex:1 1 140px !important;min-width:0 !important}',
+      /* Cada filtro ocupa su propio renglon completo. Comprobado en el celular:
+         con dos por renglon, el de Categoria cruzaba el borde de la pantalla.
+         Asi los tres quedan en 335 px y ninguno se sale. */
+      '.filters{display:flex !important;flex-wrap:wrap !important;gap:8px !important;',
+      'padding:10px !important}',
+      '.filter-group{flex:1 1 100% !important;flex-wrap:wrap !important;min-width:0 !important}',
+      '.filter-label{flex:0 0 100% !important}',
       /* El desplegable se pasaba 25 px de la pantalla: con width:100% el relleno
          y el borde se SUMAN al ancho si no se declara box-sizing. */
       '.filters,.filter-group,.filter-select{box-sizing:border-box !important;',
@@ -21752,9 +21959,42 @@ function volverAlPanel(){try{if(window.parent&&window.parent!==window&&window.pa
     } catch (e) { /* si no se puede consultar, se deja sin marcar */ }
   }
 
+  /* ---------------- rejillas de KPI en pantalla de celular ----------------
+     En un telefono, la fila de KPI conserva sus seis columnas de escritorio:
+     cada tarjeta queda en 53 px con 87 px de contenido, el texto se sale y
+     estira la pagina 25 px de mas.
+
+     Esto NO se puede arreglar con hoja de estilos: el informe escribe
+     'grid-template-columns: repeat(6, ...) !important' en el atributo style del
+     propio elemento, y un estilo en linea con !important gana a cualquier regla.
+     Solo se puede cambiar desde codigo, y eso se hace aqui.
+
+     Se pasa a dos columnas y se guarda el valor original, para que al volver a
+     una pantalla ancha quede exactamente como estaba. Nada de esto toca cifras. */
+  function rejillasCelular() {
+    var celular = window.innerWidth <= 700;
+    var nodos = document.querySelectorAll('[style*="grid-template-columns"]');
+    for (var i = 0; i < nodos.length; i++) {
+      var el = nodos[i];
+      var actual = el.style.getPropertyValue('grid-template-columns');
+      if (el.getAttribute('data-rfl-cols') === null) {
+        var m = /repeat\((\d+)/.exec(actual);
+        if (!m || +m[1] <= 2) continue;          /* dos o menos ya cabe */
+        el.setAttribute('data-rfl-cols', actual);
+      }
+      var original = el.getAttribute('data-rfl-cols');
+      var quiere = celular ? 'repeat(2, minmax(0px, 1fr))' : original;
+      if (actual !== quiere) {
+        el.style.setProperty('grid-template-columns', quiere, 'important');
+      }
+    }
+  }
+
   function iniciar() {
     marcarAnidado();
     marcarContenedor();
+    rejillasCelular();
+    window.addEventListener('resize', rejillasCelular);
     inyectarEstilos();
     crearBoton();
     escucharMensajes();
@@ -21786,6 +22026,7 @@ function volverAlPanel(){try{if(window.parent&&window.parent!==window&&window.pa
         bandasNafNaf();
         cabeceraReact();
         estirarMarcos();
+        rejillasCelular();
         corregirContraste(activo ? MIN_PROJ : MIN_RATIO);
         vigilarMarcos();
         instalarEnMarcos();
@@ -23897,10 +24138,21 @@ renderIntV2();
       '.desc-wrap,.cel-scroll{max-width:100% !important;overflow-x:auto !important;',
       '-webkit-overflow-scrolling:touch}',
       'html,body{overflow-x:hidden !important;max-width:100% !important}',
+      /* El informe debe poder crecer a lo alto. Si su documento se queda en el
+         alto de la ventana, el hub lo mide corto y vuelve a aparecer el
+         desplazamiento interno: un cuadrito con los filtros y el resto
+         escondido. Con alto automatico, el marco toma la medida completa. */
+      'html,body{height:auto !important;min-height:0 !important;',
+      'overflow-y:visible !important}',
       /* los filtros, a lo ancho y en tamaño de dedo: aqui SI funcionan, porque
          el navegador del telefono ejecuta JavaScript */
-      '.filters{flex-wrap:wrap !important;gap:8px !important;padding:10px !important}',
-      '.filter-group{flex:1 1 140px !important;min-width:0 !important}',
+      /* Cada filtro ocupa su propio renglon completo. Comprobado en el celular:
+         con dos por renglon, el de Categoria cruzaba el borde de la pantalla.
+         Asi los tres quedan en 335 px y ninguno se sale. */
+      '.filters{display:flex !important;flex-wrap:wrap !important;gap:8px !important;',
+      'padding:10px !important}',
+      '.filter-group{flex:1 1 100% !important;flex-wrap:wrap !important;min-width:0 !important}',
+      '.filter-label{flex:0 0 100% !important}',
       /* El desplegable se pasaba 25 px de la pantalla: con width:100% el relleno
          y el borde se SUMAN al ancho si no se declara box-sizing. */
       '.filters,.filter-group,.filter-select{box-sizing:border-box !important;',
@@ -24830,9 +25082,42 @@ renderIntV2();
     } catch (e) { /* si no se puede consultar, se deja sin marcar */ }
   }
 
+  /* ---------------- rejillas de KPI en pantalla de celular ----------------
+     En un telefono, la fila de KPI conserva sus seis columnas de escritorio:
+     cada tarjeta queda en 53 px con 87 px de contenido, el texto se sale y
+     estira la pagina 25 px de mas.
+
+     Esto NO se puede arreglar con hoja de estilos: el informe escribe
+     'grid-template-columns: repeat(6, ...) !important' en el atributo style del
+     propio elemento, y un estilo en linea con !important gana a cualquier regla.
+     Solo se puede cambiar desde codigo, y eso se hace aqui.
+
+     Se pasa a dos columnas y se guarda el valor original, para que al volver a
+     una pantalla ancha quede exactamente como estaba. Nada de esto toca cifras. */
+  function rejillasCelular() {
+    var celular = window.innerWidth <= 700;
+    var nodos = document.querySelectorAll('[style*="grid-template-columns"]');
+    for (var i = 0; i < nodos.length; i++) {
+      var el = nodos[i];
+      var actual = el.style.getPropertyValue('grid-template-columns');
+      if (el.getAttribute('data-rfl-cols') === null) {
+        var m = /repeat\((\d+)/.exec(actual);
+        if (!m || +m[1] <= 2) continue;          /* dos o menos ya cabe */
+        el.setAttribute('data-rfl-cols', actual);
+      }
+      var original = el.getAttribute('data-rfl-cols');
+      var quiere = celular ? 'repeat(2, minmax(0px, 1fr))' : original;
+      if (actual !== quiere) {
+        el.style.setProperty('grid-template-columns', quiere, 'important');
+      }
+    }
+  }
+
   function iniciar() {
     marcarAnidado();
     marcarContenedor();
+    rejillasCelular();
+    window.addEventListener('resize', rejillasCelular);
     inyectarEstilos();
     crearBoton();
     escucharMensajes();
@@ -24864,6 +25149,7 @@ renderIntV2();
         bandasNafNaf();
         cabeceraReact();
         estirarMarcos();
+        rejillasCelular();
         corregirContraste(activo ? MIN_PROJ : MIN_RATIO);
         vigilarMarcos();
         instalarEnMarcos();
@@ -26722,10 +27008,21 @@ render6();
       '.desc-wrap,.cel-scroll{max-width:100% !important;overflow-x:auto !important;',
       '-webkit-overflow-scrolling:touch}',
       'html,body{overflow-x:hidden !important;max-width:100% !important}',
+      /* El informe debe poder crecer a lo alto. Si su documento se queda en el
+         alto de la ventana, el hub lo mide corto y vuelve a aparecer el
+         desplazamiento interno: un cuadrito con los filtros y el resto
+         escondido. Con alto automatico, el marco toma la medida completa. */
+      'html,body{height:auto !important;min-height:0 !important;',
+      'overflow-y:visible !important}',
       /* los filtros, a lo ancho y en tamaño de dedo: aqui SI funcionan, porque
          el navegador del telefono ejecuta JavaScript */
-      '.filters{flex-wrap:wrap !important;gap:8px !important;padding:10px !important}',
-      '.filter-group{flex:1 1 140px !important;min-width:0 !important}',
+      /* Cada filtro ocupa su propio renglon completo. Comprobado en el celular:
+         con dos por renglon, el de Categoria cruzaba el borde de la pantalla.
+         Asi los tres quedan en 335 px y ninguno se sale. */
+      '.filters{display:flex !important;flex-wrap:wrap !important;gap:8px !important;',
+      'padding:10px !important}',
+      '.filter-group{flex:1 1 100% !important;flex-wrap:wrap !important;min-width:0 !important}',
+      '.filter-label{flex:0 0 100% !important}',
       /* El desplegable se pasaba 25 px de la pantalla: con width:100% el relleno
          y el borde se SUMAN al ancho si no se declara box-sizing. */
       '.filters,.filter-group,.filter-select{box-sizing:border-box !important;',
@@ -27655,9 +27952,42 @@ render6();
     } catch (e) { /* si no se puede consultar, se deja sin marcar */ }
   }
 
+  /* ---------------- rejillas de KPI en pantalla de celular ----------------
+     En un telefono, la fila de KPI conserva sus seis columnas de escritorio:
+     cada tarjeta queda en 53 px con 87 px de contenido, el texto se sale y
+     estira la pagina 25 px de mas.
+
+     Esto NO se puede arreglar con hoja de estilos: el informe escribe
+     'grid-template-columns: repeat(6, ...) !important' en el atributo style del
+     propio elemento, y un estilo en linea con !important gana a cualquier regla.
+     Solo se puede cambiar desde codigo, y eso se hace aqui.
+
+     Se pasa a dos columnas y se guarda el valor original, para que al volver a
+     una pantalla ancha quede exactamente como estaba. Nada de esto toca cifras. */
+  function rejillasCelular() {
+    var celular = window.innerWidth <= 700;
+    var nodos = document.querySelectorAll('[style*="grid-template-columns"]');
+    for (var i = 0; i < nodos.length; i++) {
+      var el = nodos[i];
+      var actual = el.style.getPropertyValue('grid-template-columns');
+      if (el.getAttribute('data-rfl-cols') === null) {
+        var m = /repeat\((\d+)/.exec(actual);
+        if (!m || +m[1] <= 2) continue;          /* dos o menos ya cabe */
+        el.setAttribute('data-rfl-cols', actual);
+      }
+      var original = el.getAttribute('data-rfl-cols');
+      var quiere = celular ? 'repeat(2, minmax(0px, 1fr))' : original;
+      if (actual !== quiere) {
+        el.style.setProperty('grid-template-columns', quiere, 'important');
+      }
+    }
+  }
+
   function iniciar() {
     marcarAnidado();
     marcarContenedor();
+    rejillasCelular();
+    window.addEventListener('resize', rejillasCelular);
     inyectarEstilos();
     crearBoton();
     escucharMensajes();
@@ -27689,6 +28019,7 @@ render6();
         bandasNafNaf();
         cabeceraReact();
         estirarMarcos();
+        rejillasCelular();
         corregirContraste(activo ? MIN_PROJ : MIN_RATIO);
         vigilarMarcos();
         instalarEnMarcos();
@@ -32242,10 +32573,21 @@ window.addEventListener('message', function(e) {
       '.desc-wrap,.cel-scroll{max-width:100% !important;overflow-x:auto !important;',
       '-webkit-overflow-scrolling:touch}',
       'html,body{overflow-x:hidden !important;max-width:100% !important}',
+      /* El informe debe poder crecer a lo alto. Si su documento se queda en el
+         alto de la ventana, el hub lo mide corto y vuelve a aparecer el
+         desplazamiento interno: un cuadrito con los filtros y el resto
+         escondido. Con alto automatico, el marco toma la medida completa. */
+      'html,body{height:auto !important;min-height:0 !important;',
+      'overflow-y:visible !important}',
       /* los filtros, a lo ancho y en tamaño de dedo: aqui SI funcionan, porque
          el navegador del telefono ejecuta JavaScript */
-      '.filters{flex-wrap:wrap !important;gap:8px !important;padding:10px !important}',
-      '.filter-group{flex:1 1 140px !important;min-width:0 !important}',
+      /* Cada filtro ocupa su propio renglon completo. Comprobado en el celular:
+         con dos por renglon, el de Categoria cruzaba el borde de la pantalla.
+         Asi los tres quedan en 335 px y ninguno se sale. */
+      '.filters{display:flex !important;flex-wrap:wrap !important;gap:8px !important;',
+      'padding:10px !important}',
+      '.filter-group{flex:1 1 100% !important;flex-wrap:wrap !important;min-width:0 !important}',
+      '.filter-label{flex:0 0 100% !important}',
       /* El desplegable se pasaba 25 px de la pantalla: con width:100% el relleno
          y el borde se SUMAN al ancho si no se declara box-sizing. */
       '.filters,.filter-group,.filter-select{box-sizing:border-box !important;',
@@ -33175,9 +33517,42 @@ window.addEventListener('message', function(e) {
     } catch (e) { /* si no se puede consultar, se deja sin marcar */ }
   }
 
+  /* ---------------- rejillas de KPI en pantalla de celular ----------------
+     En un telefono, la fila de KPI conserva sus seis columnas de escritorio:
+     cada tarjeta queda en 53 px con 87 px de contenido, el texto se sale y
+     estira la pagina 25 px de mas.
+
+     Esto NO se puede arreglar con hoja de estilos: el informe escribe
+     'grid-template-columns: repeat(6, ...) !important' en el atributo style del
+     propio elemento, y un estilo en linea con !important gana a cualquier regla.
+     Solo se puede cambiar desde codigo, y eso se hace aqui.
+
+     Se pasa a dos columnas y se guarda el valor original, para que al volver a
+     una pantalla ancha quede exactamente como estaba. Nada de esto toca cifras. */
+  function rejillasCelular() {
+    var celular = window.innerWidth <= 700;
+    var nodos = document.querySelectorAll('[style*=&quot;grid-template-columns&quot;]');
+    for (var i = 0; i < nodos.length; i++) {
+      var el = nodos[i];
+      var actual = el.style.getPropertyValue('grid-template-columns');
+      if (el.getAttribute('data-rfl-cols') === null) {
+        var m = /repeat\((\d+)/.exec(actual);
+        if (!m || +m[1] <= 2) continue;          /* dos o menos ya cabe */
+        el.setAttribute('data-rfl-cols', actual);
+      }
+      var original = el.getAttribute('data-rfl-cols');
+      var quiere = celular ? 'repeat(2, minmax(0px, 1fr))' : original;
+      if (actual !== quiere) {
+        el.style.setProperty('grid-template-columns', quiere, 'important');
+      }
+    }
+  }
+
   function iniciar() {
     marcarAnidado();
     marcarContenedor();
+    rejillasCelular();
+    window.addEventListener('resize', rejillasCelular);
     inyectarEstilos();
     crearBoton();
     escucharMensajes();
@@ -33209,6 +33584,7 @@ window.addEventListener('message', function(e) {
         bandasNafNaf();
         cabeceraReact();
         estirarMarcos();
+        rejillasCelular();
         corregirContraste(activo ? MIN_PROJ : MIN_RATIO);
         vigilarMarcos();
         instalarEnMarcos();
@@ -35068,10 +35444,21 @@ window.addEventListener('message', function(e) {
       '.desc-wrap,.cel-scroll{max-width:100% !important;overflow-x:auto !important;',
       '-webkit-overflow-scrolling:touch}',
       'html,body{overflow-x:hidden !important;max-width:100% !important}',
+      /* El informe debe poder crecer a lo alto. Si su documento se queda en el
+         alto de la ventana, el hub lo mide corto y vuelve a aparecer el
+         desplazamiento interno: un cuadrito con los filtros y el resto
+         escondido. Con alto automatico, el marco toma la medida completa. */
+      'html,body{height:auto !important;min-height:0 !important;',
+      'overflow-y:visible !important}',
       /* los filtros, a lo ancho y en tamaño de dedo: aqui SI funcionan, porque
          el navegador del telefono ejecuta JavaScript */
-      '.filters{flex-wrap:wrap !important;gap:8px !important;padding:10px !important}',
-      '.filter-group{flex:1 1 140px !important;min-width:0 !important}',
+      /* Cada filtro ocupa su propio renglon completo. Comprobado en el celular:
+         con dos por renglon, el de Categoria cruzaba el borde de la pantalla.
+         Asi los tres quedan en 335 px y ninguno se sale. */
+      '.filters{display:flex !important;flex-wrap:wrap !important;gap:8px !important;',
+      'padding:10px !important}',
+      '.filter-group{flex:1 1 100% !important;flex-wrap:wrap !important;min-width:0 !important}',
+      '.filter-label{flex:0 0 100% !important}',
       /* El desplegable se pasaba 25 px de la pantalla: con width:100% el relleno
          y el borde se SUMAN al ancho si no se declara box-sizing. */
       '.filters,.filter-group,.filter-select{box-sizing:border-box !important;',
@@ -36001,9 +36388,42 @@ window.addEventListener('message', function(e) {
     } catch (e) { /* si no se puede consultar, se deja sin marcar */ }
   }
 
+  /* ---------------- rejillas de KPI en pantalla de celular ----------------
+     En un telefono, la fila de KPI conserva sus seis columnas de escritorio:
+     cada tarjeta queda en 53 px con 87 px de contenido, el texto se sale y
+     estira la pagina 25 px de mas.
+
+     Esto NO se puede arreglar con hoja de estilos: el informe escribe
+     'grid-template-columns: repeat(6, ...) !important' en el atributo style del
+     propio elemento, y un estilo en linea con !important gana a cualquier regla.
+     Solo se puede cambiar desde codigo, y eso se hace aqui.
+
+     Se pasa a dos columnas y se guarda el valor original, para que al volver a
+     una pantalla ancha quede exactamente como estaba. Nada de esto toca cifras. */
+  function rejillasCelular() {
+    var celular = window.innerWidth <= 700;
+    var nodos = document.querySelectorAll('[style*=&quot;grid-template-columns&quot;]');
+    for (var i = 0; i < nodos.length; i++) {
+      var el = nodos[i];
+      var actual = el.style.getPropertyValue('grid-template-columns');
+      if (el.getAttribute('data-rfl-cols') === null) {
+        var m = /repeat\((\d+)/.exec(actual);
+        if (!m || +m[1] <= 2) continue;          /* dos o menos ya cabe */
+        el.setAttribute('data-rfl-cols', actual);
+      }
+      var original = el.getAttribute('data-rfl-cols');
+      var quiere = celular ? 'repeat(2, minmax(0px, 1fr))' : original;
+      if (actual !== quiere) {
+        el.style.setProperty('grid-template-columns', quiere, 'important');
+      }
+    }
+  }
+
   function iniciar() {
     marcarAnidado();
     marcarContenedor();
+    rejillasCelular();
+    window.addEventListener('resize', rejillasCelular);
     inyectarEstilos();
     crearBoton();
     escucharMensajes();
@@ -36035,6 +36455,7 @@ window.addEventListener('message', function(e) {
         bandasNafNaf();
         cabeceraReact();
         estirarMarcos();
+        rejillasCelular();
         corregirContraste(activo ? MIN_PROJ : MIN_RATIO);
         vigilarMarcos();
         instalarEnMarcos();
@@ -36566,10 +36987,21 @@ window.addEventListener('message', function(e) {
       '.desc-wrap,.cel-scroll{max-width:100% !important;overflow-x:auto !important;',
       '-webkit-overflow-scrolling:touch}',
       'html,body{overflow-x:hidden !important;max-width:100% !important}',
+      /* El informe debe poder crecer a lo alto. Si su documento se queda en el
+         alto de la ventana, el hub lo mide corto y vuelve a aparecer el
+         desplazamiento interno: un cuadrito con los filtros y el resto
+         escondido. Con alto automatico, el marco toma la medida completa. */
+      'html,body{height:auto !important;min-height:0 !important;',
+      'overflow-y:visible !important}',
       /* los filtros, a lo ancho y en tamaño de dedo: aqui SI funcionan, porque
          el navegador del telefono ejecuta JavaScript */
-      '.filters{flex-wrap:wrap !important;gap:8px !important;padding:10px !important}',
-      '.filter-group{flex:1 1 140px !important;min-width:0 !important}',
+      /* Cada filtro ocupa su propio renglon completo. Comprobado en el celular:
+         con dos por renglon, el de Categoria cruzaba el borde de la pantalla.
+         Asi los tres quedan en 335 px y ninguno se sale. */
+      '.filters{display:flex !important;flex-wrap:wrap !important;gap:8px !important;',
+      'padding:10px !important}',
+      '.filter-group{flex:1 1 100% !important;flex-wrap:wrap !important;min-width:0 !important}',
+      '.filter-label{flex:0 0 100% !important}',
       /* El desplegable se pasaba 25 px de la pantalla: con width:100% el relleno
          y el borde se SUMAN al ancho si no se declara box-sizing. */
       '.filters,.filter-group,.filter-select{box-sizing:border-box !important;',
@@ -37499,9 +37931,42 @@ window.addEventListener('message', function(e) {
     } catch (e) { /* si no se puede consultar, se deja sin marcar */ }
   }
 
+  /* ---------------- rejillas de KPI en pantalla de celular ----------------
+     En un telefono, la fila de KPI conserva sus seis columnas de escritorio:
+     cada tarjeta queda en 53 px con 87 px de contenido, el texto se sale y
+     estira la pagina 25 px de mas.
+
+     Esto NO se puede arreglar con hoja de estilos: el informe escribe
+     'grid-template-columns: repeat(6, ...) !important' en el atributo style del
+     propio elemento, y un estilo en linea con !important gana a cualquier regla.
+     Solo se puede cambiar desde codigo, y eso se hace aqui.
+
+     Se pasa a dos columnas y se guarda el valor original, para que al volver a
+     una pantalla ancha quede exactamente como estaba. Nada de esto toca cifras. */
+  function rejillasCelular() {
+    var celular = window.innerWidth <= 700;
+    var nodos = document.querySelectorAll('[style*="grid-template-columns"]');
+    for (var i = 0; i < nodos.length; i++) {
+      var el = nodos[i];
+      var actual = el.style.getPropertyValue('grid-template-columns');
+      if (el.getAttribute('data-rfl-cols') === null) {
+        var m = /repeat\((\d+)/.exec(actual);
+        if (!m || +m[1] <= 2) continue;          /* dos o menos ya cabe */
+        el.setAttribute('data-rfl-cols', actual);
+      }
+      var original = el.getAttribute('data-rfl-cols');
+      var quiere = celular ? 'repeat(2, minmax(0px, 1fr))' : original;
+      if (actual !== quiere) {
+        el.style.setProperty('grid-template-columns', quiere, 'important');
+      }
+    }
+  }
+
   function iniciar() {
     marcarAnidado();
     marcarContenedor();
+    rejillasCelular();
+    window.addEventListener('resize', rejillasCelular);
     inyectarEstilos();
     crearBoton();
     escucharMensajes();
@@ -37533,6 +37998,7 @@ window.addEventListener('message', function(e) {
         bandasNafNaf();
         cabeceraReact();
         estirarMarcos();
+        rejillasCelular();
         corregirContraste(activo ? MIN_PROJ : MIN_RATIO);
         vigilarMarcos();
         instalarEnMarcos();
@@ -41324,10 +41790,21 @@ function togglePiramides(){
       '.desc-wrap,.cel-scroll{max-width:100% !important;overflow-x:auto !important;',
       '-webkit-overflow-scrolling:touch}',
       'html,body{overflow-x:hidden !important;max-width:100% !important}',
+      /* El informe debe poder crecer a lo alto. Si su documento se queda en el
+         alto de la ventana, el hub lo mide corto y vuelve a aparecer el
+         desplazamiento interno: un cuadrito con los filtros y el resto
+         escondido. Con alto automatico, el marco toma la medida completa. */
+      'html,body{height:auto !important;min-height:0 !important;',
+      'overflow-y:visible !important}',
       /* los filtros, a lo ancho y en tamaño de dedo: aqui SI funcionan, porque
          el navegador del telefono ejecuta JavaScript */
-      '.filters{flex-wrap:wrap !important;gap:8px !important;padding:10px !important}',
-      '.filter-group{flex:1 1 140px !important;min-width:0 !important}',
+      /* Cada filtro ocupa su propio renglon completo. Comprobado en el celular:
+         con dos por renglon, el de Categoria cruzaba el borde de la pantalla.
+         Asi los tres quedan en 335 px y ninguno se sale. */
+      '.filters{display:flex !important;flex-wrap:wrap !important;gap:8px !important;',
+      'padding:10px !important}',
+      '.filter-group{flex:1 1 100% !important;flex-wrap:wrap !important;min-width:0 !important}',
+      '.filter-label{flex:0 0 100% !important}',
       /* El desplegable se pasaba 25 px de la pantalla: con width:100% el relleno
          y el borde se SUMAN al ancho si no se declara box-sizing. */
       '.filters,.filter-group,.filter-select{box-sizing:border-box !important;',
@@ -42257,9 +42734,42 @@ function togglePiramides(){
     } catch (e) { /* si no se puede consultar, se deja sin marcar */ }
   }
 
+  /* ---------------- rejillas de KPI en pantalla de celular ----------------
+     En un telefono, la fila de KPI conserva sus seis columnas de escritorio:
+     cada tarjeta queda en 53 px con 87 px de contenido, el texto se sale y
+     estira la pagina 25 px de mas.
+
+     Esto NO se puede arreglar con hoja de estilos: el informe escribe
+     'grid-template-columns: repeat(6, ...) !important' en el atributo style del
+     propio elemento, y un estilo en linea con !important gana a cualquier regla.
+     Solo se puede cambiar desde codigo, y eso se hace aqui.
+
+     Se pasa a dos columnas y se guarda el valor original, para que al volver a
+     una pantalla ancha quede exactamente como estaba. Nada de esto toca cifras. */
+  function rejillasCelular() {
+    var celular = window.innerWidth <= 700;
+    var nodos = document.querySelectorAll('[style*="grid-template-columns"]');
+    for (var i = 0; i < nodos.length; i++) {
+      var el = nodos[i];
+      var actual = el.style.getPropertyValue('grid-template-columns');
+      if (el.getAttribute('data-rfl-cols') === null) {
+        var m = /repeat\((\d+)/.exec(actual);
+        if (!m || +m[1] <= 2) continue;          /* dos o menos ya cabe */
+        el.setAttribute('data-rfl-cols', actual);
+      }
+      var original = el.getAttribute('data-rfl-cols');
+      var quiere = celular ? 'repeat(2, minmax(0px, 1fr))' : original;
+      if (actual !== quiere) {
+        el.style.setProperty('grid-template-columns', quiere, 'important');
+      }
+    }
+  }
+
   function iniciar() {
     marcarAnidado();
     marcarContenedor();
+    rejillasCelular();
+    window.addEventListener('resize', rejillasCelular);
     inyectarEstilos();
     crearBoton();
     escucharMensajes();
@@ -42291,6 +42801,7 @@ function togglePiramides(){
         bandasNafNaf();
         cabeceraReact();
         estirarMarcos();
+        rejillasCelular();
         corregirContraste(activo ? MIN_PROJ : MIN_RATIO);
         vigilarMarcos();
         instalarEnMarcos();
@@ -45249,10 +45760,21 @@ setTimeout(() => { initPosCatFilter(); buildPosChart(); }, 150);
       '.desc-wrap,.cel-scroll{max-width:100% !important;overflow-x:auto !important;',
       '-webkit-overflow-scrolling:touch}',
       'html,body{overflow-x:hidden !important;max-width:100% !important}',
+      /* El informe debe poder crecer a lo alto. Si su documento se queda en el
+         alto de la ventana, el hub lo mide corto y vuelve a aparecer el
+         desplazamiento interno: un cuadrito con los filtros y el resto
+         escondido. Con alto automatico, el marco toma la medida completa. */
+      'html,body{height:auto !important;min-height:0 !important;',
+      'overflow-y:visible !important}',
       /* los filtros, a lo ancho y en tamaño de dedo: aqui SI funcionan, porque
          el navegador del telefono ejecuta JavaScript */
-      '.filters{flex-wrap:wrap !important;gap:8px !important;padding:10px !important}',
-      '.filter-group{flex:1 1 140px !important;min-width:0 !important}',
+      /* Cada filtro ocupa su propio renglon completo. Comprobado en el celular:
+         con dos por renglon, el de Categoria cruzaba el borde de la pantalla.
+         Asi los tres quedan en 335 px y ninguno se sale. */
+      '.filters{display:flex !important;flex-wrap:wrap !important;gap:8px !important;',
+      'padding:10px !important}',
+      '.filter-group{flex:1 1 100% !important;flex-wrap:wrap !important;min-width:0 !important}',
+      '.filter-label{flex:0 0 100% !important}',
       /* El desplegable se pasaba 25 px de la pantalla: con width:100% el relleno
          y el borde se SUMAN al ancho si no se declara box-sizing. */
       '.filters,.filter-group,.filter-select{box-sizing:border-box !important;',
@@ -46182,9 +46704,42 @@ setTimeout(() => { initPosCatFilter(); buildPosChart(); }, 150);
     } catch (e) { /* si no se puede consultar, se deja sin marcar */ }
   }
 
+  /* ---------------- rejillas de KPI en pantalla de celular ----------------
+     En un telefono, la fila de KPI conserva sus seis columnas de escritorio:
+     cada tarjeta queda en 53 px con 87 px de contenido, el texto se sale y
+     estira la pagina 25 px de mas.
+
+     Esto NO se puede arreglar con hoja de estilos: el informe escribe
+     'grid-template-columns: repeat(6, ...) !important' en el atributo style del
+     propio elemento, y un estilo en linea con !important gana a cualquier regla.
+     Solo se puede cambiar desde codigo, y eso se hace aqui.
+
+     Se pasa a dos columnas y se guarda el valor original, para que al volver a
+     una pantalla ancha quede exactamente como estaba. Nada de esto toca cifras. */
+  function rejillasCelular() {
+    var celular = window.innerWidth <= 700;
+    var nodos = document.querySelectorAll('[style*="grid-template-columns"]');
+    for (var i = 0; i < nodos.length; i++) {
+      var el = nodos[i];
+      var actual = el.style.getPropertyValue('grid-template-columns');
+      if (el.getAttribute('data-rfl-cols') === null) {
+        var m = /repeat\((\d+)/.exec(actual);
+        if (!m || +m[1] <= 2) continue;          /* dos o menos ya cabe */
+        el.setAttribute('data-rfl-cols', actual);
+      }
+      var original = el.getAttribute('data-rfl-cols');
+      var quiere = celular ? 'repeat(2, minmax(0px, 1fr))' : original;
+      if (actual !== quiere) {
+        el.style.setProperty('grid-template-columns', quiere, 'important');
+      }
+    }
+  }
+
   function iniciar() {
     marcarAnidado();
     marcarContenedor();
+    rejillasCelular();
+    window.addEventListener('resize', rejillasCelular);
     inyectarEstilos();
     crearBoton();
     escucharMensajes();
@@ -46216,6 +46771,7 @@ setTimeout(() => { initPosCatFilter(); buildPosChart(); }, 150);
         bandasNafNaf();
         cabeceraReact();
         estirarMarcos();
+        rejillasCelular();
         corregirContraste(activo ? MIN_PROJ : MIN_RATIO);
         vigilarMarcos();
         instalarEnMarcos();
