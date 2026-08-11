@@ -5192,8 +5192,18 @@ function volverAlPanel(){try{if(window.parent&&window.parent!==window&&window.pa
   var COLS_MAX = 6;   // más de 6 en una fila se vuelve ilegible proyectado
 
   /* Hasta 6 tarjetas: una sola fila.
-     Más de 6: dos filas parejas, para que ninguna quede sola al final.   */
+     Más de 6: dos filas parejas, para que ninguna quede sola al final.
+
+     EN CELULAR, dos columnas como maximo. En Moft esta fila tiene cinco
+     tarjetas: a 370 px de pantalla le tocaban 53 px a cada una y las cifras se
+     partian en vertical, un digito por renglon -"$ 1 4 9 . 3 0 6"-. Con dos
+     columnas cada tarjeta recibe unos 175 px y la cifra entra completa.        */
+  function esCelular() {
+    return window.innerWidth <= 700;
+  }
+
   function columnasPara(n) {
+    if (esCelular()) return n <= 2 ? n : 2;
     if (n <= COLS_MAX) return n;
     return Math.ceil(n / 2);
   }
@@ -5210,7 +5220,9 @@ function volverAlPanel(){try{if(window.parent&&window.parent!==window&&window.pa
       }
       if (!n) continue;
 
-      if (on) {
+      /* Se reparten las columnas en proyeccion Y en celular. Antes solo se hacia
+         en proyeccion, y en el telefono quedaba el reparto de escritorio. */
+      if (on || esCelular()) {
         caja.style.setProperty('grid-template-columns',
           'repeat(' + columnasPara(n) + ', minmax(0, 1fr))', 'important');
         caja.setAttribute('data-rfl-kpi', '1');
@@ -5496,8 +5508,14 @@ function volverAlPanel(){try{if(window.parent&&window.parent!==window&&window.pa
          se puede llegar a el desplazando el informe. Cortar dato nunca es la
          solucion. */
       'body{max-width:100% !important}',
-      '.panel,.chart-card,.kpi-card,.card,p,td,th,li,div{overflow-wrap:break-word;',
+      /* Partir palabras solo en parrafos y celdas. Antes esto iba tambien en
+         cualquier div, y con las tarjetas de KPI estrechas los numeros se
+         astillaban en vertical: "$ 1 4 9 . 3 0 6", una cifra por renglon.
+         Una cifra NUNCA debe partirse: se marca para que se mantenga entera. */
+      'p,td,th,li,.panel-subtitle,.chart-note{overflow-wrap:break-word;',
       'word-break:normal}',
+      '.kpi-val,.kpi-lbl,.sv,.sl,.card-stat,.kpi-card{overflow-wrap:normal !important;',
+      'word-break:keep-all !important;hyphens:none !important}',
       /* OJO: aqui NO se toca el alto de html ni de body.
          Hubo un 'height:auto !important' para poder medir el informe, y eso
          rompio Naf Naf: su contenido vive en un marco con height:100%, y un
@@ -6457,18 +6475,46 @@ function volverAlPanel(){try{if(window.parent&&window.parent!==window&&window.pa
      una pantalla ancha quede exactamente como estaba. Nada de esto toca cifras. */
   function rejillasCelular() {
     var celular = window.innerWidth <= 700;
-    var nodos = document.querySelectorAll('[style*="grid-template-columns"]');
-    for (var i = 0; i < nodos.length; i++) {
-      var el = nodos[i];
-      var actual = el.style.getPropertyValue('grid-template-columns');
+
+    /* Se busca POR MEDIDA, no por nombre de clase ni por atributo style.
+       El intento anterior solo miraba las rejillas escritas en el atributo
+       style, y la fila de KPI de Moft no esta ahi: quedaba en cinco columnas de
+       60 px y el texto se partia letra por letra -"PRE CIO PRO MED IO"-.
+       Aqui se recorre todo el documento, se pregunta al navegador cuantas
+       columnas tiene de verdad cada rejilla, y si a cada tarjeta le tocan menos
+       de 120 px se reparte en dos columnas; si aun asi no caben, en una. */
+    var ANCHO_MINIMO = 120;
+    /* Solo las filas de KPI y las rejillas escritas en el atributo style.
+       Antes esto recorria TODOS los elementos del informe preguntando estilos en
+       cada cambio del documento: miles de consultas repetidas que dejaron el
+       navegador sin responder. La lista corta hace el mismo trabajo. */
+    var todos = document.querySelectorAll(
+      CONTENEDORES_KPI + ', [style*="grid-template-columns"]');
+    for (var i = 0; i < todos.length; i++) {
+      var el = todos[i];
+      var cs = getComputedStyle(el);
+      if (cs.display !== 'grid' && cs.display !== 'inline-grid') continue;
+
+      var pistas = (cs.gridTemplateColumns || '').trim().split(/\s+/).filter(Boolean);
+      if (pistas.length < 3) continue;              /* dos o menos ya cabe */
+
       if (el.getAttribute('data-rfl-cols') === null) {
-        var m = /repeat\((\d+)/.exec(actual);
-        if (!m || +m[1] <= 2) continue;          /* dos o menos ya cabe */
-        el.setAttribute('data-rfl-cols', actual);
+        /* se guarda lo que el elemento tenia escrito, para poder devolverlo */
+        el.setAttribute('data-rfl-cols',
+          el.style.getPropertyValue('grid-template-columns') || '');
       }
-      var original = el.getAttribute('data-rfl-cols');
-      var quiere = celular ? 'repeat(2, minmax(0px, 1fr))' : original;
-      if (actual !== quiere) {
+
+      if (!celular) {
+        var previo = el.getAttribute('data-rfl-cols');
+        if (previo) el.style.setProperty('grid-template-columns', previo, 'important');
+        else el.style.removeProperty('grid-template-columns');
+        continue;
+      }
+
+      var disponible = el.clientWidth || window.innerWidth;
+      var columnas = disponible / 2 >= ANCHO_MINIMO ? 2 : 1;
+      var quiere = 'repeat(' + columnas + ', minmax(0px, 1fr))';
+      if (el.style.getPropertyValue('grid-template-columns') !== quiere) {
         el.style.setProperty('grid-template-columns', quiere, 'important');
       }
     }
@@ -10469,8 +10515,18 @@ renderAll();
   var COLS_MAX = 6;   // más de 6 en una fila se vuelve ilegible proyectado
 
   /* Hasta 6 tarjetas: una sola fila.
-     Más de 6: dos filas parejas, para que ninguna quede sola al final.   */
+     Más de 6: dos filas parejas, para que ninguna quede sola al final.
+
+     EN CELULAR, dos columnas como maximo. En Moft esta fila tiene cinco
+     tarjetas: a 370 px de pantalla le tocaban 53 px a cada una y las cifras se
+     partian en vertical, un digito por renglon -&quot;$ 1 4 9 . 3 0 6&quot;-. Con dos
+     columnas cada tarjeta recibe unos 175 px y la cifra entra completa.        */
+  function esCelular() {
+    return window.innerWidth <= 700;
+  }
+
   function columnasPara(n) {
+    if (esCelular()) return n <= 2 ? n : 2;
     if (n <= COLS_MAX) return n;
     return Math.ceil(n / 2);
   }
@@ -10487,7 +10543,9 @@ renderAll();
       }
       if (!n) continue;
 
-      if (on) {
+      /* Se reparten las columnas en proyeccion Y en celular. Antes solo se hacia
+         en proyeccion, y en el telefono quedaba el reparto de escritorio. */
+      if (on || esCelular()) {
         caja.style.setProperty('grid-template-columns',
           'repeat(' + columnasPara(n) + ', minmax(0, 1fr))', 'important');
         caja.setAttribute('data-rfl-kpi', '1');
@@ -10773,8 +10831,14 @@ renderAll();
          se puede llegar a el desplazando el informe. Cortar dato nunca es la
          solucion. */
       'body{max-width:100% !important}',
-      '.panel,.chart-card,.kpi-card,.card,p,td,th,li,div{overflow-wrap:break-word;',
+      /* Partir palabras solo en parrafos y celdas. Antes esto iba tambien en
+         cualquier div, y con las tarjetas de KPI estrechas los numeros se
+         astillaban en vertical: &quot;$ 1 4 9 . 3 0 6&quot;, una cifra por renglon.
+         Una cifra NUNCA debe partirse: se marca para que se mantenga entera. */
+      'p,td,th,li,.panel-subtitle,.chart-note{overflow-wrap:break-word;',
       'word-break:normal}',
+      '.kpi-val,.kpi-lbl,.sv,.sl,.card-stat,.kpi-card{overflow-wrap:normal !important;',
+      'word-break:keep-all !important;hyphens:none !important}',
       /* OJO: aqui NO se toca el alto de html ni de body.
          Hubo un 'height:auto !important' para poder medir el informe, y eso
          rompio Naf Naf: su contenido vive en un marco con height:100%, y un
@@ -11734,18 +11798,46 @@ renderAll();
      una pantalla ancha quede exactamente como estaba. Nada de esto toca cifras. */
   function rejillasCelular() {
     var celular = window.innerWidth <= 700;
-    var nodos = document.querySelectorAll('[style*=&quot;grid-template-columns&quot;]');
-    for (var i = 0; i < nodos.length; i++) {
-      var el = nodos[i];
-      var actual = el.style.getPropertyValue('grid-template-columns');
+
+    /* Se busca POR MEDIDA, no por nombre de clase ni por atributo style.
+       El intento anterior solo miraba las rejillas escritas en el atributo
+       style, y la fila de KPI de Moft no esta ahi: quedaba en cinco columnas de
+       60 px y el texto se partia letra por letra -&quot;PRE CIO PRO MED IO&quot;-.
+       Aqui se recorre todo el documento, se pregunta al navegador cuantas
+       columnas tiene de verdad cada rejilla, y si a cada tarjeta le tocan menos
+       de 120 px se reparte en dos columnas; si aun asi no caben, en una. */
+    var ANCHO_MINIMO = 120;
+    /* Solo las filas de KPI y las rejillas escritas en el atributo style.
+       Antes esto recorria TODOS los elementos del informe preguntando estilos en
+       cada cambio del documento: miles de consultas repetidas que dejaron el
+       navegador sin responder. La lista corta hace el mismo trabajo. */
+    var todos = document.querySelectorAll(
+      CONTENEDORES_KPI + ', [style*=&quot;grid-template-columns&quot;]');
+    for (var i = 0; i < todos.length; i++) {
+      var el = todos[i];
+      var cs = getComputedStyle(el);
+      if (cs.display !== 'grid' &amp;&amp; cs.display !== 'inline-grid') continue;
+
+      var pistas = (cs.gridTemplateColumns || '').trim().split(/\s+/).filter(Boolean);
+      if (pistas.length < 3) continue;              /* dos o menos ya cabe */
+
       if (el.getAttribute('data-rfl-cols') === null) {
-        var m = /repeat\((\d+)/.exec(actual);
-        if (!m || +m[1] <= 2) continue;          /* dos o menos ya cabe */
-        el.setAttribute('data-rfl-cols', actual);
+        /* se guarda lo que el elemento tenia escrito, para poder devolverlo */
+        el.setAttribute('data-rfl-cols',
+          el.style.getPropertyValue('grid-template-columns') || '');
       }
-      var original = el.getAttribute('data-rfl-cols');
-      var quiere = celular ? 'repeat(2, minmax(0px, 1fr))' : original;
-      if (actual !== quiere) {
+
+      if (!celular) {
+        var previo = el.getAttribute('data-rfl-cols');
+        if (previo) el.style.setProperty('grid-template-columns', previo, 'important');
+        else el.style.removeProperty('grid-template-columns');
+        continue;
+      }
+
+      var disponible = el.clientWidth || window.innerWidth;
+      var columnas = disponible / 2 >= ANCHO_MINIMO ? 2 : 1;
+      var quiere = 'repeat(' + columnas + ', minmax(0px, 1fr))';
+      if (el.style.getPropertyValue('grid-template-columns') !== quiere) {
         el.style.setProperty('grid-template-columns', quiere, 'important');
       }
     }
@@ -15158,8 +15250,18 @@ function volverAlPanel(){try{if(window.parent&&window.parent!==window){if(typeof
   var COLS_MAX = 6;   // más de 6 en una fila se vuelve ilegible proyectado
 
   /* Hasta 6 tarjetas: una sola fila.
-     Más de 6: dos filas parejas, para que ninguna quede sola al final.   */
+     Más de 6: dos filas parejas, para que ninguna quede sola al final.
+
+     EN CELULAR, dos columnas como maximo. En Moft esta fila tiene cinco
+     tarjetas: a 370 px de pantalla le tocaban 53 px a cada una y las cifras se
+     partian en vertical, un digito por renglon -"$ 1 4 9 . 3 0 6"-. Con dos
+     columnas cada tarjeta recibe unos 175 px y la cifra entra completa.        */
+  function esCelular() {
+    return window.innerWidth <= 700;
+  }
+
   function columnasPara(n) {
+    if (esCelular()) return n <= 2 ? n : 2;
     if (n <= COLS_MAX) return n;
     return Math.ceil(n / 2);
   }
@@ -15176,7 +15278,9 @@ function volverAlPanel(){try{if(window.parent&&window.parent!==window){if(typeof
       }
       if (!n) continue;
 
-      if (on) {
+      /* Se reparten las columnas en proyeccion Y en celular. Antes solo se hacia
+         en proyeccion, y en el telefono quedaba el reparto de escritorio. */
+      if (on || esCelular()) {
         caja.style.setProperty('grid-template-columns',
           'repeat(' + columnasPara(n) + ', minmax(0, 1fr))', 'important');
         caja.setAttribute('data-rfl-kpi', '1');
@@ -15462,8 +15566,14 @@ function volverAlPanel(){try{if(window.parent&&window.parent!==window){if(typeof
          se puede llegar a el desplazando el informe. Cortar dato nunca es la
          solucion. */
       'body{max-width:100% !important}',
-      '.panel,.chart-card,.kpi-card,.card,p,td,th,li,div{overflow-wrap:break-word;',
+      /* Partir palabras solo en parrafos y celdas. Antes esto iba tambien en
+         cualquier div, y con las tarjetas de KPI estrechas los numeros se
+         astillaban en vertical: "$ 1 4 9 . 3 0 6", una cifra por renglon.
+         Una cifra NUNCA debe partirse: se marca para que se mantenga entera. */
+      'p,td,th,li,.panel-subtitle,.chart-note{overflow-wrap:break-word;',
       'word-break:normal}',
+      '.kpi-val,.kpi-lbl,.sv,.sl,.card-stat,.kpi-card{overflow-wrap:normal !important;',
+      'word-break:keep-all !important;hyphens:none !important}',
       /* OJO: aqui NO se toca el alto de html ni de body.
          Hubo un 'height:auto !important' para poder medir el informe, y eso
          rompio Naf Naf: su contenido vive en un marco con height:100%, y un
@@ -16423,18 +16533,46 @@ function volverAlPanel(){try{if(window.parent&&window.parent!==window){if(typeof
      una pantalla ancha quede exactamente como estaba. Nada de esto toca cifras. */
   function rejillasCelular() {
     var celular = window.innerWidth <= 700;
-    var nodos = document.querySelectorAll('[style*="grid-template-columns"]');
-    for (var i = 0; i < nodos.length; i++) {
-      var el = nodos[i];
-      var actual = el.style.getPropertyValue('grid-template-columns');
+
+    /* Se busca POR MEDIDA, no por nombre de clase ni por atributo style.
+       El intento anterior solo miraba las rejillas escritas en el atributo
+       style, y la fila de KPI de Moft no esta ahi: quedaba en cinco columnas de
+       60 px y el texto se partia letra por letra -"PRE CIO PRO MED IO"-.
+       Aqui se recorre todo el documento, se pregunta al navegador cuantas
+       columnas tiene de verdad cada rejilla, y si a cada tarjeta le tocan menos
+       de 120 px se reparte en dos columnas; si aun asi no caben, en una. */
+    var ANCHO_MINIMO = 120;
+    /* Solo las filas de KPI y las rejillas escritas en el atributo style.
+       Antes esto recorria TODOS los elementos del informe preguntando estilos en
+       cada cambio del documento: miles de consultas repetidas que dejaron el
+       navegador sin responder. La lista corta hace el mismo trabajo. */
+    var todos = document.querySelectorAll(
+      CONTENEDORES_KPI + ', [style*="grid-template-columns"]');
+    for (var i = 0; i < todos.length; i++) {
+      var el = todos[i];
+      var cs = getComputedStyle(el);
+      if (cs.display !== 'grid' && cs.display !== 'inline-grid') continue;
+
+      var pistas = (cs.gridTemplateColumns || '').trim().split(/\s+/).filter(Boolean);
+      if (pistas.length < 3) continue;              /* dos o menos ya cabe */
+
       if (el.getAttribute('data-rfl-cols') === null) {
-        var m = /repeat\((\d+)/.exec(actual);
-        if (!m || +m[1] <= 2) continue;          /* dos o menos ya cabe */
-        el.setAttribute('data-rfl-cols', actual);
+        /* se guarda lo que el elemento tenia escrito, para poder devolverlo */
+        el.setAttribute('data-rfl-cols',
+          el.style.getPropertyValue('grid-template-columns') || '');
       }
-      var original = el.getAttribute('data-rfl-cols');
-      var quiere = celular ? 'repeat(2, minmax(0px, 1fr))' : original;
-      if (actual !== quiere) {
+
+      if (!celular) {
+        var previo = el.getAttribute('data-rfl-cols');
+        if (previo) el.style.setProperty('grid-template-columns', previo, 'important');
+        else el.style.removeProperty('grid-template-columns');
+        continue;
+      }
+
+      var disponible = el.clientWidth || window.innerWidth;
+      var columnas = disponible / 2 >= ANCHO_MINIMO ? 2 : 1;
+      var quiere = 'repeat(' + columnas + ', minmax(0px, 1fr))';
+      if (el.style.getPropertyValue('grid-template-columns') !== quiere) {
         el.style.setProperty('grid-template-columns', quiere, 'important');
       }
     }
@@ -20713,8 +20851,18 @@ function volverAlPanel(){try{if(window.parent&&window.parent!==window&&window.pa
   var COLS_MAX = 6;   // más de 6 en una fila se vuelve ilegible proyectado
 
   /* Hasta 6 tarjetas: una sola fila.
-     Más de 6: dos filas parejas, para que ninguna quede sola al final.   */
+     Más de 6: dos filas parejas, para que ninguna quede sola al final.
+
+     EN CELULAR, dos columnas como maximo. En Moft esta fila tiene cinco
+     tarjetas: a 370 px de pantalla le tocaban 53 px a cada una y las cifras se
+     partian en vertical, un digito por renglon -"$ 1 4 9 . 3 0 6"-. Con dos
+     columnas cada tarjeta recibe unos 175 px y la cifra entra completa.        */
+  function esCelular() {
+    return window.innerWidth <= 700;
+  }
+
   function columnasPara(n) {
+    if (esCelular()) return n <= 2 ? n : 2;
     if (n <= COLS_MAX) return n;
     return Math.ceil(n / 2);
   }
@@ -20731,7 +20879,9 @@ function volverAlPanel(){try{if(window.parent&&window.parent!==window&&window.pa
       }
       if (!n) continue;
 
-      if (on) {
+      /* Se reparten las columnas en proyeccion Y en celular. Antes solo se hacia
+         en proyeccion, y en el telefono quedaba el reparto de escritorio. */
+      if (on || esCelular()) {
         caja.style.setProperty('grid-template-columns',
           'repeat(' + columnasPara(n) + ', minmax(0, 1fr))', 'important');
         caja.setAttribute('data-rfl-kpi', '1');
@@ -21017,8 +21167,14 @@ function volverAlPanel(){try{if(window.parent&&window.parent!==window&&window.pa
          se puede llegar a el desplazando el informe. Cortar dato nunca es la
          solucion. */
       'body{max-width:100% !important}',
-      '.panel,.chart-card,.kpi-card,.card,p,td,th,li,div{overflow-wrap:break-word;',
+      /* Partir palabras solo en parrafos y celdas. Antes esto iba tambien en
+         cualquier div, y con las tarjetas de KPI estrechas los numeros se
+         astillaban en vertical: "$ 1 4 9 . 3 0 6", una cifra por renglon.
+         Una cifra NUNCA debe partirse: se marca para que se mantenga entera. */
+      'p,td,th,li,.panel-subtitle,.chart-note{overflow-wrap:break-word;',
       'word-break:normal}',
+      '.kpi-val,.kpi-lbl,.sv,.sl,.card-stat,.kpi-card{overflow-wrap:normal !important;',
+      'word-break:keep-all !important;hyphens:none !important}',
       /* OJO: aqui NO se toca el alto de html ni de body.
          Hubo un 'height:auto !important' para poder medir el informe, y eso
          rompio Naf Naf: su contenido vive en un marco con height:100%, y un
@@ -21978,18 +22134,46 @@ function volverAlPanel(){try{if(window.parent&&window.parent!==window&&window.pa
      una pantalla ancha quede exactamente como estaba. Nada de esto toca cifras. */
   function rejillasCelular() {
     var celular = window.innerWidth <= 700;
-    var nodos = document.querySelectorAll('[style*="grid-template-columns"]');
-    for (var i = 0; i < nodos.length; i++) {
-      var el = nodos[i];
-      var actual = el.style.getPropertyValue('grid-template-columns');
+
+    /* Se busca POR MEDIDA, no por nombre de clase ni por atributo style.
+       El intento anterior solo miraba las rejillas escritas en el atributo
+       style, y la fila de KPI de Moft no esta ahi: quedaba en cinco columnas de
+       60 px y el texto se partia letra por letra -"PRE CIO PRO MED IO"-.
+       Aqui se recorre todo el documento, se pregunta al navegador cuantas
+       columnas tiene de verdad cada rejilla, y si a cada tarjeta le tocan menos
+       de 120 px se reparte en dos columnas; si aun asi no caben, en una. */
+    var ANCHO_MINIMO = 120;
+    /* Solo las filas de KPI y las rejillas escritas en el atributo style.
+       Antes esto recorria TODOS los elementos del informe preguntando estilos en
+       cada cambio del documento: miles de consultas repetidas que dejaron el
+       navegador sin responder. La lista corta hace el mismo trabajo. */
+    var todos = document.querySelectorAll(
+      CONTENEDORES_KPI + ', [style*="grid-template-columns"]');
+    for (var i = 0; i < todos.length; i++) {
+      var el = todos[i];
+      var cs = getComputedStyle(el);
+      if (cs.display !== 'grid' && cs.display !== 'inline-grid') continue;
+
+      var pistas = (cs.gridTemplateColumns || '').trim().split(/\s+/).filter(Boolean);
+      if (pistas.length < 3) continue;              /* dos o menos ya cabe */
+
       if (el.getAttribute('data-rfl-cols') === null) {
-        var m = /repeat\((\d+)/.exec(actual);
-        if (!m || +m[1] <= 2) continue;          /* dos o menos ya cabe */
-        el.setAttribute('data-rfl-cols', actual);
+        /* se guarda lo que el elemento tenia escrito, para poder devolverlo */
+        el.setAttribute('data-rfl-cols',
+          el.style.getPropertyValue('grid-template-columns') || '');
       }
-      var original = el.getAttribute('data-rfl-cols');
-      var quiere = celular ? 'repeat(2, minmax(0px, 1fr))' : original;
-      if (actual !== quiere) {
+
+      if (!celular) {
+        var previo = el.getAttribute('data-rfl-cols');
+        if (previo) el.style.setProperty('grid-template-columns', previo, 'important');
+        else el.style.removeProperty('grid-template-columns');
+        continue;
+      }
+
+      var disponible = el.clientWidth || window.innerWidth;
+      var columnas = disponible / 2 >= ANCHO_MINIMO ? 2 : 1;
+      var quiere = 'repeat(' + columnas + ', minmax(0px, 1fr))';
+      if (el.style.getPropertyValue('grid-template-columns') !== quiere) {
         el.style.setProperty('grid-template-columns', quiere, 'important');
       }
     }
@@ -23845,8 +24029,18 @@ renderIntV2();
   var COLS_MAX = 6;   // más de 6 en una fila se vuelve ilegible proyectado
 
   /* Hasta 6 tarjetas: una sola fila.
-     Más de 6: dos filas parejas, para que ninguna quede sola al final.   */
+     Más de 6: dos filas parejas, para que ninguna quede sola al final.
+
+     EN CELULAR, dos columnas como maximo. En Moft esta fila tiene cinco
+     tarjetas: a 370 px de pantalla le tocaban 53 px a cada una y las cifras se
+     partian en vertical, un digito por renglon -"$ 1 4 9 . 3 0 6"-. Con dos
+     columnas cada tarjeta recibe unos 175 px y la cifra entra completa.        */
+  function esCelular() {
+    return window.innerWidth <= 700;
+  }
+
   function columnasPara(n) {
+    if (esCelular()) return n <= 2 ? n : 2;
     if (n <= COLS_MAX) return n;
     return Math.ceil(n / 2);
   }
@@ -23863,7 +24057,9 @@ renderIntV2();
       }
       if (!n) continue;
 
-      if (on) {
+      /* Se reparten las columnas en proyeccion Y en celular. Antes solo se hacia
+         en proyeccion, y en el telefono quedaba el reparto de escritorio. */
+      if (on || esCelular()) {
         caja.style.setProperty('grid-template-columns',
           'repeat(' + columnasPara(n) + ', minmax(0, 1fr))', 'important');
         caja.setAttribute('data-rfl-kpi', '1');
@@ -24149,8 +24345,14 @@ renderIntV2();
          se puede llegar a el desplazando el informe. Cortar dato nunca es la
          solucion. */
       'body{max-width:100% !important}',
-      '.panel,.chart-card,.kpi-card,.card,p,td,th,li,div{overflow-wrap:break-word;',
+      /* Partir palabras solo en parrafos y celdas. Antes esto iba tambien en
+         cualquier div, y con las tarjetas de KPI estrechas los numeros se
+         astillaban en vertical: "$ 1 4 9 . 3 0 6", una cifra por renglon.
+         Una cifra NUNCA debe partirse: se marca para que se mantenga entera. */
+      'p,td,th,li,.panel-subtitle,.chart-note{overflow-wrap:break-word;',
       'word-break:normal}',
+      '.kpi-val,.kpi-lbl,.sv,.sl,.card-stat,.kpi-card{overflow-wrap:normal !important;',
+      'word-break:keep-all !important;hyphens:none !important}',
       /* OJO: aqui NO se toca el alto de html ni de body.
          Hubo un 'height:auto !important' para poder medir el informe, y eso
          rompio Naf Naf: su contenido vive en un marco con height:100%, y un
@@ -25110,18 +25312,46 @@ renderIntV2();
      una pantalla ancha quede exactamente como estaba. Nada de esto toca cifras. */
   function rejillasCelular() {
     var celular = window.innerWidth <= 700;
-    var nodos = document.querySelectorAll('[style*="grid-template-columns"]');
-    for (var i = 0; i < nodos.length; i++) {
-      var el = nodos[i];
-      var actual = el.style.getPropertyValue('grid-template-columns');
+
+    /* Se busca POR MEDIDA, no por nombre de clase ni por atributo style.
+       El intento anterior solo miraba las rejillas escritas en el atributo
+       style, y la fila de KPI de Moft no esta ahi: quedaba en cinco columnas de
+       60 px y el texto se partia letra por letra -"PRE CIO PRO MED IO"-.
+       Aqui se recorre todo el documento, se pregunta al navegador cuantas
+       columnas tiene de verdad cada rejilla, y si a cada tarjeta le tocan menos
+       de 120 px se reparte en dos columnas; si aun asi no caben, en una. */
+    var ANCHO_MINIMO = 120;
+    /* Solo las filas de KPI y las rejillas escritas en el atributo style.
+       Antes esto recorria TODOS los elementos del informe preguntando estilos en
+       cada cambio del documento: miles de consultas repetidas que dejaron el
+       navegador sin responder. La lista corta hace el mismo trabajo. */
+    var todos = document.querySelectorAll(
+      CONTENEDORES_KPI + ', [style*="grid-template-columns"]');
+    for (var i = 0; i < todos.length; i++) {
+      var el = todos[i];
+      var cs = getComputedStyle(el);
+      if (cs.display !== 'grid' && cs.display !== 'inline-grid') continue;
+
+      var pistas = (cs.gridTemplateColumns || '').trim().split(/\s+/).filter(Boolean);
+      if (pistas.length < 3) continue;              /* dos o menos ya cabe */
+
       if (el.getAttribute('data-rfl-cols') === null) {
-        var m = /repeat\((\d+)/.exec(actual);
-        if (!m || +m[1] <= 2) continue;          /* dos o menos ya cabe */
-        el.setAttribute('data-rfl-cols', actual);
+        /* se guarda lo que el elemento tenia escrito, para poder devolverlo */
+        el.setAttribute('data-rfl-cols',
+          el.style.getPropertyValue('grid-template-columns') || '');
       }
-      var original = el.getAttribute('data-rfl-cols');
-      var quiere = celular ? 'repeat(2, minmax(0px, 1fr))' : original;
-      if (actual !== quiere) {
+
+      if (!celular) {
+        var previo = el.getAttribute('data-rfl-cols');
+        if (previo) el.style.setProperty('grid-template-columns', previo, 'important');
+        else el.style.removeProperty('grid-template-columns');
+        continue;
+      }
+
+      var disponible = el.clientWidth || window.innerWidth;
+      var columnas = disponible / 2 >= ANCHO_MINIMO ? 2 : 1;
+      var quiere = 'repeat(' + columnas + ', minmax(0px, 1fr))';
+      if (el.style.getPropertyValue('grid-template-columns') !== quiere) {
         el.style.setProperty('grid-template-columns', quiere, 'important');
       }
     }
@@ -26724,8 +26954,18 @@ render6();
   var COLS_MAX = 6;   // más de 6 en una fila se vuelve ilegible proyectado
 
   /* Hasta 6 tarjetas: una sola fila.
-     Más de 6: dos filas parejas, para que ninguna quede sola al final.   */
+     Más de 6: dos filas parejas, para que ninguna quede sola al final.
+
+     EN CELULAR, dos columnas como maximo. En Moft esta fila tiene cinco
+     tarjetas: a 370 px de pantalla le tocaban 53 px a cada una y las cifras se
+     partian en vertical, un digito por renglon -"$ 1 4 9 . 3 0 6"-. Con dos
+     columnas cada tarjeta recibe unos 175 px y la cifra entra completa.        */
+  function esCelular() {
+    return window.innerWidth <= 700;
+  }
+
   function columnasPara(n) {
+    if (esCelular()) return n <= 2 ? n : 2;
     if (n <= COLS_MAX) return n;
     return Math.ceil(n / 2);
   }
@@ -26742,7 +26982,9 @@ render6();
       }
       if (!n) continue;
 
-      if (on) {
+      /* Se reparten las columnas en proyeccion Y en celular. Antes solo se hacia
+         en proyeccion, y en el telefono quedaba el reparto de escritorio. */
+      if (on || esCelular()) {
         caja.style.setProperty('grid-template-columns',
           'repeat(' + columnasPara(n) + ', minmax(0, 1fr))', 'important');
         caja.setAttribute('data-rfl-kpi', '1');
@@ -27028,8 +27270,14 @@ render6();
          se puede llegar a el desplazando el informe. Cortar dato nunca es la
          solucion. */
       'body{max-width:100% !important}',
-      '.panel,.chart-card,.kpi-card,.card,p,td,th,li,div{overflow-wrap:break-word;',
+      /* Partir palabras solo en parrafos y celdas. Antes esto iba tambien en
+         cualquier div, y con las tarjetas de KPI estrechas los numeros se
+         astillaban en vertical: "$ 1 4 9 . 3 0 6", una cifra por renglon.
+         Una cifra NUNCA debe partirse: se marca para que se mantenga entera. */
+      'p,td,th,li,.panel-subtitle,.chart-note{overflow-wrap:break-word;',
       'word-break:normal}',
+      '.kpi-val,.kpi-lbl,.sv,.sl,.card-stat,.kpi-card{overflow-wrap:normal !important;',
+      'word-break:keep-all !important;hyphens:none !important}',
       /* OJO: aqui NO se toca el alto de html ni de body.
          Hubo un 'height:auto !important' para poder medir el informe, y eso
          rompio Naf Naf: su contenido vive en un marco con height:100%, y un
@@ -27989,18 +28237,46 @@ render6();
      una pantalla ancha quede exactamente como estaba. Nada de esto toca cifras. */
   function rejillasCelular() {
     var celular = window.innerWidth <= 700;
-    var nodos = document.querySelectorAll('[style*="grid-template-columns"]');
-    for (var i = 0; i < nodos.length; i++) {
-      var el = nodos[i];
-      var actual = el.style.getPropertyValue('grid-template-columns');
+
+    /* Se busca POR MEDIDA, no por nombre de clase ni por atributo style.
+       El intento anterior solo miraba las rejillas escritas en el atributo
+       style, y la fila de KPI de Moft no esta ahi: quedaba en cinco columnas de
+       60 px y el texto se partia letra por letra -"PRE CIO PRO MED IO"-.
+       Aqui se recorre todo el documento, se pregunta al navegador cuantas
+       columnas tiene de verdad cada rejilla, y si a cada tarjeta le tocan menos
+       de 120 px se reparte en dos columnas; si aun asi no caben, en una. */
+    var ANCHO_MINIMO = 120;
+    /* Solo las filas de KPI y las rejillas escritas en el atributo style.
+       Antes esto recorria TODOS los elementos del informe preguntando estilos en
+       cada cambio del documento: miles de consultas repetidas que dejaron el
+       navegador sin responder. La lista corta hace el mismo trabajo. */
+    var todos = document.querySelectorAll(
+      CONTENEDORES_KPI + ', [style*="grid-template-columns"]');
+    for (var i = 0; i < todos.length; i++) {
+      var el = todos[i];
+      var cs = getComputedStyle(el);
+      if (cs.display !== 'grid' && cs.display !== 'inline-grid') continue;
+
+      var pistas = (cs.gridTemplateColumns || '').trim().split(/\s+/).filter(Boolean);
+      if (pistas.length < 3) continue;              /* dos o menos ya cabe */
+
       if (el.getAttribute('data-rfl-cols') === null) {
-        var m = /repeat\((\d+)/.exec(actual);
-        if (!m || +m[1] <= 2) continue;          /* dos o menos ya cabe */
-        el.setAttribute('data-rfl-cols', actual);
+        /* se guarda lo que el elemento tenia escrito, para poder devolverlo */
+        el.setAttribute('data-rfl-cols',
+          el.style.getPropertyValue('grid-template-columns') || '');
       }
-      var original = el.getAttribute('data-rfl-cols');
-      var quiere = celular ? 'repeat(2, minmax(0px, 1fr))' : original;
-      if (actual !== quiere) {
+
+      if (!celular) {
+        var previo = el.getAttribute('data-rfl-cols');
+        if (previo) el.style.setProperty('grid-template-columns', previo, 'important');
+        else el.style.removeProperty('grid-template-columns');
+        continue;
+      }
+
+      var disponible = el.clientWidth || window.innerWidth;
+      var columnas = disponible / 2 >= ANCHO_MINIMO ? 2 : 1;
+      var quiere = 'repeat(' + columnas + ', minmax(0px, 1fr))';
+      if (el.style.getPropertyValue('grid-template-columns') !== quiere) {
         el.style.setProperty('grid-template-columns', quiere, 'important');
       }
     }
@@ -32298,8 +32574,18 @@ window.addEventListener('message', function(e) {
   var COLS_MAX = 6;   // más de 6 en una fila se vuelve ilegible proyectado
 
   /* Hasta 6 tarjetas: una sola fila.
-     Más de 6: dos filas parejas, para que ninguna quede sola al final.   */
+     Más de 6: dos filas parejas, para que ninguna quede sola al final.
+
+     EN CELULAR, dos columnas como maximo. En Moft esta fila tiene cinco
+     tarjetas: a 370 px de pantalla le tocaban 53 px a cada una y las cifras se
+     partian en vertical, un digito por renglon -&quot;$ 1 4 9 . 3 0 6&quot;-. Con dos
+     columnas cada tarjeta recibe unos 175 px y la cifra entra completa.        */
+  function esCelular() {
+    return window.innerWidth <= 700;
+  }
+
   function columnasPara(n) {
+    if (esCelular()) return n <= 2 ? n : 2;
     if (n <= COLS_MAX) return n;
     return Math.ceil(n / 2);
   }
@@ -32316,7 +32602,9 @@ window.addEventListener('message', function(e) {
       }
       if (!n) continue;
 
-      if (on) {
+      /* Se reparten las columnas en proyeccion Y en celular. Antes solo se hacia
+         en proyeccion, y en el telefono quedaba el reparto de escritorio. */
+      if (on || esCelular()) {
         caja.style.setProperty('grid-template-columns',
           'repeat(' + columnasPara(n) + ', minmax(0, 1fr))', 'important');
         caja.setAttribute('data-rfl-kpi', '1');
@@ -32602,8 +32890,14 @@ window.addEventListener('message', function(e) {
          se puede llegar a el desplazando el informe. Cortar dato nunca es la
          solucion. */
       'body{max-width:100% !important}',
-      '.panel,.chart-card,.kpi-card,.card,p,td,th,li,div{overflow-wrap:break-word;',
+      /* Partir palabras solo en parrafos y celdas. Antes esto iba tambien en
+         cualquier div, y con las tarjetas de KPI estrechas los numeros se
+         astillaban en vertical: &quot;$ 1 4 9 . 3 0 6&quot;, una cifra por renglon.
+         Una cifra NUNCA debe partirse: se marca para que se mantenga entera. */
+      'p,td,th,li,.panel-subtitle,.chart-note{overflow-wrap:break-word;',
       'word-break:normal}',
+      '.kpi-val,.kpi-lbl,.sv,.sl,.card-stat,.kpi-card{overflow-wrap:normal !important;',
+      'word-break:keep-all !important;hyphens:none !important}',
       /* OJO: aqui NO se toca el alto de html ni de body.
          Hubo un 'height:auto !important' para poder medir el informe, y eso
          rompio Naf Naf: su contenido vive en un marco con height:100%, y un
@@ -33563,18 +33857,46 @@ window.addEventListener('message', function(e) {
      una pantalla ancha quede exactamente como estaba. Nada de esto toca cifras. */
   function rejillasCelular() {
     var celular = window.innerWidth <= 700;
-    var nodos = document.querySelectorAll('[style*=&quot;grid-template-columns&quot;]');
-    for (var i = 0; i < nodos.length; i++) {
-      var el = nodos[i];
-      var actual = el.style.getPropertyValue('grid-template-columns');
+
+    /* Se busca POR MEDIDA, no por nombre de clase ni por atributo style.
+       El intento anterior solo miraba las rejillas escritas en el atributo
+       style, y la fila de KPI de Moft no esta ahi: quedaba en cinco columnas de
+       60 px y el texto se partia letra por letra -&quot;PRE CIO PRO MED IO&quot;-.
+       Aqui se recorre todo el documento, se pregunta al navegador cuantas
+       columnas tiene de verdad cada rejilla, y si a cada tarjeta le tocan menos
+       de 120 px se reparte en dos columnas; si aun asi no caben, en una. */
+    var ANCHO_MINIMO = 120;
+    /* Solo las filas de KPI y las rejillas escritas en el atributo style.
+       Antes esto recorria TODOS los elementos del informe preguntando estilos en
+       cada cambio del documento: miles de consultas repetidas que dejaron el
+       navegador sin responder. La lista corta hace el mismo trabajo. */
+    var todos = document.querySelectorAll(
+      CONTENEDORES_KPI + ', [style*=&quot;grid-template-columns&quot;]');
+    for (var i = 0; i < todos.length; i++) {
+      var el = todos[i];
+      var cs = getComputedStyle(el);
+      if (cs.display !== 'grid' &amp;&amp; cs.display !== 'inline-grid') continue;
+
+      var pistas = (cs.gridTemplateColumns || '').trim().split(/\s+/).filter(Boolean);
+      if (pistas.length < 3) continue;              /* dos o menos ya cabe */
+
       if (el.getAttribute('data-rfl-cols') === null) {
-        var m = /repeat\((\d+)/.exec(actual);
-        if (!m || +m[1] <= 2) continue;          /* dos o menos ya cabe */
-        el.setAttribute('data-rfl-cols', actual);
+        /* se guarda lo que el elemento tenia escrito, para poder devolverlo */
+        el.setAttribute('data-rfl-cols',
+          el.style.getPropertyValue('grid-template-columns') || '');
       }
-      var original = el.getAttribute('data-rfl-cols');
-      var quiere = celular ? 'repeat(2, minmax(0px, 1fr))' : original;
-      if (actual !== quiere) {
+
+      if (!celular) {
+        var previo = el.getAttribute('data-rfl-cols');
+        if (previo) el.style.setProperty('grid-template-columns', previo, 'important');
+        else el.style.removeProperty('grid-template-columns');
+        continue;
+      }
+
+      var disponible = el.clientWidth || window.innerWidth;
+      var columnas = disponible / 2 >= ANCHO_MINIMO ? 2 : 1;
+      var quiere = 'repeat(' + columnas + ', minmax(0px, 1fr))';
+      if (el.style.getPropertyValue('grid-template-columns') !== quiere) {
         el.style.setProperty('grid-template-columns', quiere, 'important');
       }
     }
@@ -35178,8 +35500,18 @@ window.addEventListener('message', function(e) {
   var COLS_MAX = 6;   // más de 6 en una fila se vuelve ilegible proyectado
 
   /* Hasta 6 tarjetas: una sola fila.
-     Más de 6: dos filas parejas, para que ninguna quede sola al final.   */
+     Más de 6: dos filas parejas, para que ninguna quede sola al final.
+
+     EN CELULAR, dos columnas como maximo. En Moft esta fila tiene cinco
+     tarjetas: a 370 px de pantalla le tocaban 53 px a cada una y las cifras se
+     partian en vertical, un digito por renglon -&quot;$ 1 4 9 . 3 0 6&quot;-. Con dos
+     columnas cada tarjeta recibe unos 175 px y la cifra entra completa.        */
+  function esCelular() {
+    return window.innerWidth <= 700;
+  }
+
   function columnasPara(n) {
+    if (esCelular()) return n <= 2 ? n : 2;
     if (n <= COLS_MAX) return n;
     return Math.ceil(n / 2);
   }
@@ -35196,7 +35528,9 @@ window.addEventListener('message', function(e) {
       }
       if (!n) continue;
 
-      if (on) {
+      /* Se reparten las columnas en proyeccion Y en celular. Antes solo se hacia
+         en proyeccion, y en el telefono quedaba el reparto de escritorio. */
+      if (on || esCelular()) {
         caja.style.setProperty('grid-template-columns',
           'repeat(' + columnasPara(n) + ', minmax(0, 1fr))', 'important');
         caja.setAttribute('data-rfl-kpi', '1');
@@ -35482,8 +35816,14 @@ window.addEventListener('message', function(e) {
          se puede llegar a el desplazando el informe. Cortar dato nunca es la
          solucion. */
       'body{max-width:100% !important}',
-      '.panel,.chart-card,.kpi-card,.card,p,td,th,li,div{overflow-wrap:break-word;',
+      /* Partir palabras solo en parrafos y celdas. Antes esto iba tambien en
+         cualquier div, y con las tarjetas de KPI estrechas los numeros se
+         astillaban en vertical: &quot;$ 1 4 9 . 3 0 6&quot;, una cifra por renglon.
+         Una cifra NUNCA debe partirse: se marca para que se mantenga entera. */
+      'p,td,th,li,.panel-subtitle,.chart-note{overflow-wrap:break-word;',
       'word-break:normal}',
+      '.kpi-val,.kpi-lbl,.sv,.sl,.card-stat,.kpi-card{overflow-wrap:normal !important;',
+      'word-break:keep-all !important;hyphens:none !important}',
       /* OJO: aqui NO se toca el alto de html ni de body.
          Hubo un 'height:auto !important' para poder medir el informe, y eso
          rompio Naf Naf: su contenido vive en un marco con height:100%, y un
@@ -36443,18 +36783,46 @@ window.addEventListener('message', function(e) {
      una pantalla ancha quede exactamente como estaba. Nada de esto toca cifras. */
   function rejillasCelular() {
     var celular = window.innerWidth <= 700;
-    var nodos = document.querySelectorAll('[style*=&quot;grid-template-columns&quot;]');
-    for (var i = 0; i < nodos.length; i++) {
-      var el = nodos[i];
-      var actual = el.style.getPropertyValue('grid-template-columns');
+
+    /* Se busca POR MEDIDA, no por nombre de clase ni por atributo style.
+       El intento anterior solo miraba las rejillas escritas en el atributo
+       style, y la fila de KPI de Moft no esta ahi: quedaba en cinco columnas de
+       60 px y el texto se partia letra por letra -&quot;PRE CIO PRO MED IO&quot;-.
+       Aqui se recorre todo el documento, se pregunta al navegador cuantas
+       columnas tiene de verdad cada rejilla, y si a cada tarjeta le tocan menos
+       de 120 px se reparte en dos columnas; si aun asi no caben, en una. */
+    var ANCHO_MINIMO = 120;
+    /* Solo las filas de KPI y las rejillas escritas en el atributo style.
+       Antes esto recorria TODOS los elementos del informe preguntando estilos en
+       cada cambio del documento: miles de consultas repetidas que dejaron el
+       navegador sin responder. La lista corta hace el mismo trabajo. */
+    var todos = document.querySelectorAll(
+      CONTENEDORES_KPI + ', [style*=&quot;grid-template-columns&quot;]');
+    for (var i = 0; i < todos.length; i++) {
+      var el = todos[i];
+      var cs = getComputedStyle(el);
+      if (cs.display !== 'grid' &amp;&amp; cs.display !== 'inline-grid') continue;
+
+      var pistas = (cs.gridTemplateColumns || '').trim().split(/\s+/).filter(Boolean);
+      if (pistas.length < 3) continue;              /* dos o menos ya cabe */
+
       if (el.getAttribute('data-rfl-cols') === null) {
-        var m = /repeat\((\d+)/.exec(actual);
-        if (!m || +m[1] <= 2) continue;          /* dos o menos ya cabe */
-        el.setAttribute('data-rfl-cols', actual);
+        /* se guarda lo que el elemento tenia escrito, para poder devolverlo */
+        el.setAttribute('data-rfl-cols',
+          el.style.getPropertyValue('grid-template-columns') || '');
       }
-      var original = el.getAttribute('data-rfl-cols');
-      var quiere = celular ? 'repeat(2, minmax(0px, 1fr))' : original;
-      if (actual !== quiere) {
+
+      if (!celular) {
+        var previo = el.getAttribute('data-rfl-cols');
+        if (previo) el.style.setProperty('grid-template-columns', previo, 'important');
+        else el.style.removeProperty('grid-template-columns');
+        continue;
+      }
+
+      var disponible = el.clientWidth || window.innerWidth;
+      var columnas = disponible / 2 >= ANCHO_MINIMO ? 2 : 1;
+      var quiere = 'repeat(' + columnas + ', minmax(0px, 1fr))';
+      if (el.style.getPropertyValue('grid-template-columns') !== quiere) {
         el.style.setProperty('grid-template-columns', quiere, 'important');
       }
     }
@@ -36730,8 +37098,18 @@ window.addEventListener('message', function(e) {
   var COLS_MAX = 6;   // más de 6 en una fila se vuelve ilegible proyectado
 
   /* Hasta 6 tarjetas: una sola fila.
-     Más de 6: dos filas parejas, para que ninguna quede sola al final.   */
+     Más de 6: dos filas parejas, para que ninguna quede sola al final.
+
+     EN CELULAR, dos columnas como maximo. En Moft esta fila tiene cinco
+     tarjetas: a 370 px de pantalla le tocaban 53 px a cada una y las cifras se
+     partian en vertical, un digito por renglon -"$ 1 4 9 . 3 0 6"-. Con dos
+     columnas cada tarjeta recibe unos 175 px y la cifra entra completa.        */
+  function esCelular() {
+    return window.innerWidth <= 700;
+  }
+
   function columnasPara(n) {
+    if (esCelular()) return n <= 2 ? n : 2;
     if (n <= COLS_MAX) return n;
     return Math.ceil(n / 2);
   }
@@ -36748,7 +37126,9 @@ window.addEventListener('message', function(e) {
       }
       if (!n) continue;
 
-      if (on) {
+      /* Se reparten las columnas en proyeccion Y en celular. Antes solo se hacia
+         en proyeccion, y en el telefono quedaba el reparto de escritorio. */
+      if (on || esCelular()) {
         caja.style.setProperty('grid-template-columns',
           'repeat(' + columnasPara(n) + ', minmax(0, 1fr))', 'important');
         caja.setAttribute('data-rfl-kpi', '1');
@@ -37034,8 +37414,14 @@ window.addEventListener('message', function(e) {
          se puede llegar a el desplazando el informe. Cortar dato nunca es la
          solucion. */
       'body{max-width:100% !important}',
-      '.panel,.chart-card,.kpi-card,.card,p,td,th,li,div{overflow-wrap:break-word;',
+      /* Partir palabras solo en parrafos y celdas. Antes esto iba tambien en
+         cualquier div, y con las tarjetas de KPI estrechas los numeros se
+         astillaban en vertical: "$ 1 4 9 . 3 0 6", una cifra por renglon.
+         Una cifra NUNCA debe partirse: se marca para que se mantenga entera. */
+      'p,td,th,li,.panel-subtitle,.chart-note{overflow-wrap:break-word;',
       'word-break:normal}',
+      '.kpi-val,.kpi-lbl,.sv,.sl,.card-stat,.kpi-card{overflow-wrap:normal !important;',
+      'word-break:keep-all !important;hyphens:none !important}',
       /* OJO: aqui NO se toca el alto de html ni de body.
          Hubo un 'height:auto !important' para poder medir el informe, y eso
          rompio Naf Naf: su contenido vive en un marco con height:100%, y un
@@ -37995,18 +38381,46 @@ window.addEventListener('message', function(e) {
      una pantalla ancha quede exactamente como estaba. Nada de esto toca cifras. */
   function rejillasCelular() {
     var celular = window.innerWidth <= 700;
-    var nodos = document.querySelectorAll('[style*="grid-template-columns"]');
-    for (var i = 0; i < nodos.length; i++) {
-      var el = nodos[i];
-      var actual = el.style.getPropertyValue('grid-template-columns');
+
+    /* Se busca POR MEDIDA, no por nombre de clase ni por atributo style.
+       El intento anterior solo miraba las rejillas escritas en el atributo
+       style, y la fila de KPI de Moft no esta ahi: quedaba en cinco columnas de
+       60 px y el texto se partia letra por letra -"PRE CIO PRO MED IO"-.
+       Aqui se recorre todo el documento, se pregunta al navegador cuantas
+       columnas tiene de verdad cada rejilla, y si a cada tarjeta le tocan menos
+       de 120 px se reparte en dos columnas; si aun asi no caben, en una. */
+    var ANCHO_MINIMO = 120;
+    /* Solo las filas de KPI y las rejillas escritas en el atributo style.
+       Antes esto recorria TODOS los elementos del informe preguntando estilos en
+       cada cambio del documento: miles de consultas repetidas que dejaron el
+       navegador sin responder. La lista corta hace el mismo trabajo. */
+    var todos = document.querySelectorAll(
+      CONTENEDORES_KPI + ', [style*="grid-template-columns"]');
+    for (var i = 0; i < todos.length; i++) {
+      var el = todos[i];
+      var cs = getComputedStyle(el);
+      if (cs.display !== 'grid' && cs.display !== 'inline-grid') continue;
+
+      var pistas = (cs.gridTemplateColumns || '').trim().split(/\s+/).filter(Boolean);
+      if (pistas.length < 3) continue;              /* dos o menos ya cabe */
+
       if (el.getAttribute('data-rfl-cols') === null) {
-        var m = /repeat\((\d+)/.exec(actual);
-        if (!m || +m[1] <= 2) continue;          /* dos o menos ya cabe */
-        el.setAttribute('data-rfl-cols', actual);
+        /* se guarda lo que el elemento tenia escrito, para poder devolverlo */
+        el.setAttribute('data-rfl-cols',
+          el.style.getPropertyValue('grid-template-columns') || '');
       }
-      var original = el.getAttribute('data-rfl-cols');
-      var quiere = celular ? 'repeat(2, minmax(0px, 1fr))' : original;
-      if (actual !== quiere) {
+
+      if (!celular) {
+        var previo = el.getAttribute('data-rfl-cols');
+        if (previo) el.style.setProperty('grid-template-columns', previo, 'important');
+        else el.style.removeProperty('grid-template-columns');
+        continue;
+      }
+
+      var disponible = el.clientWidth || window.innerWidth;
+      var columnas = disponible / 2 >= ANCHO_MINIMO ? 2 : 1;
+      var quiere = 'repeat(' + columnas + ', minmax(0px, 1fr))';
+      if (el.style.getPropertyValue('grid-template-columns') !== quiere) {
         el.style.setProperty('grid-template-columns', quiere, 'important');
       }
     }
@@ -41542,8 +41956,18 @@ function togglePiramides(){
   var COLS_MAX = 6;   // más de 6 en una fila se vuelve ilegible proyectado
 
   /* Hasta 6 tarjetas: una sola fila.
-     Más de 6: dos filas parejas, para que ninguna quede sola al final.   */
+     Más de 6: dos filas parejas, para que ninguna quede sola al final.
+
+     EN CELULAR, dos columnas como maximo. En Moft esta fila tiene cinco
+     tarjetas: a 370 px de pantalla le tocaban 53 px a cada una y las cifras se
+     partian en vertical, un digito por renglon -"$ 1 4 9 . 3 0 6"-. Con dos
+     columnas cada tarjeta recibe unos 175 px y la cifra entra completa.        */
+  function esCelular() {
+    return window.innerWidth <= 700;
+  }
+
   function columnasPara(n) {
+    if (esCelular()) return n <= 2 ? n : 2;
     if (n <= COLS_MAX) return n;
     return Math.ceil(n / 2);
   }
@@ -41560,7 +41984,9 @@ function togglePiramides(){
       }
       if (!n) continue;
 
-      if (on) {
+      /* Se reparten las columnas en proyeccion Y en celular. Antes solo se hacia
+         en proyeccion, y en el telefono quedaba el reparto de escritorio. */
+      if (on || esCelular()) {
         caja.style.setProperty('grid-template-columns',
           'repeat(' + columnasPara(n) + ', minmax(0, 1fr))', 'important');
         caja.setAttribute('data-rfl-kpi', '1');
@@ -41846,8 +42272,14 @@ function togglePiramides(){
          se puede llegar a el desplazando el informe. Cortar dato nunca es la
          solucion. */
       'body{max-width:100% !important}',
-      '.panel,.chart-card,.kpi-card,.card,p,td,th,li,div{overflow-wrap:break-word;',
+      /* Partir palabras solo en parrafos y celdas. Antes esto iba tambien en
+         cualquier div, y con las tarjetas de KPI estrechas los numeros se
+         astillaban en vertical: "$ 1 4 9 . 3 0 6", una cifra por renglon.
+         Una cifra NUNCA debe partirse: se marca para que se mantenga entera. */
+      'p,td,th,li,.panel-subtitle,.chart-note{overflow-wrap:break-word;',
       'word-break:normal}',
+      '.kpi-val,.kpi-lbl,.sv,.sl,.card-stat,.kpi-card{overflow-wrap:normal !important;',
+      'word-break:keep-all !important;hyphens:none !important}',
       /* OJO: aqui NO se toca el alto de html ni de body.
          Hubo un 'height:auto !important' para poder medir el informe, y eso
          rompio Naf Naf: su contenido vive en un marco con height:100%, y un
@@ -42807,18 +43239,46 @@ function togglePiramides(){
      una pantalla ancha quede exactamente como estaba. Nada de esto toca cifras. */
   function rejillasCelular() {
     var celular = window.innerWidth <= 700;
-    var nodos = document.querySelectorAll('[style*="grid-template-columns"]');
-    for (var i = 0; i < nodos.length; i++) {
-      var el = nodos[i];
-      var actual = el.style.getPropertyValue('grid-template-columns');
+
+    /* Se busca POR MEDIDA, no por nombre de clase ni por atributo style.
+       El intento anterior solo miraba las rejillas escritas en el atributo
+       style, y la fila de KPI de Moft no esta ahi: quedaba en cinco columnas de
+       60 px y el texto se partia letra por letra -"PRE CIO PRO MED IO"-.
+       Aqui se recorre todo el documento, se pregunta al navegador cuantas
+       columnas tiene de verdad cada rejilla, y si a cada tarjeta le tocan menos
+       de 120 px se reparte en dos columnas; si aun asi no caben, en una. */
+    var ANCHO_MINIMO = 120;
+    /* Solo las filas de KPI y las rejillas escritas en el atributo style.
+       Antes esto recorria TODOS los elementos del informe preguntando estilos en
+       cada cambio del documento: miles de consultas repetidas que dejaron el
+       navegador sin responder. La lista corta hace el mismo trabajo. */
+    var todos = document.querySelectorAll(
+      CONTENEDORES_KPI + ', [style*="grid-template-columns"]');
+    for (var i = 0; i < todos.length; i++) {
+      var el = todos[i];
+      var cs = getComputedStyle(el);
+      if (cs.display !== 'grid' && cs.display !== 'inline-grid') continue;
+
+      var pistas = (cs.gridTemplateColumns || '').trim().split(/\s+/).filter(Boolean);
+      if (pistas.length < 3) continue;              /* dos o menos ya cabe */
+
       if (el.getAttribute('data-rfl-cols') === null) {
-        var m = /repeat\((\d+)/.exec(actual);
-        if (!m || +m[1] <= 2) continue;          /* dos o menos ya cabe */
-        el.setAttribute('data-rfl-cols', actual);
+        /* se guarda lo que el elemento tenia escrito, para poder devolverlo */
+        el.setAttribute('data-rfl-cols',
+          el.style.getPropertyValue('grid-template-columns') || '');
       }
-      var original = el.getAttribute('data-rfl-cols');
-      var quiere = celular ? 'repeat(2, minmax(0px, 1fr))' : original;
-      if (actual !== quiere) {
+
+      if (!celular) {
+        var previo = el.getAttribute('data-rfl-cols');
+        if (previo) el.style.setProperty('grid-template-columns', previo, 'important');
+        else el.style.removeProperty('grid-template-columns');
+        continue;
+      }
+
+      var disponible = el.clientWidth || window.innerWidth;
+      var columnas = disponible / 2 >= ANCHO_MINIMO ? 2 : 1;
+      var quiere = 'repeat(' + columnas + ', minmax(0px, 1fr))';
+      if (el.style.getPropertyValue('grid-template-columns') !== quiere) {
         el.style.setProperty('grid-template-columns', quiere, 'important');
       }
     }
@@ -45521,8 +45981,18 @@ setTimeout(() => { initPosCatFilter(); buildPosChart(); }, 150);
   var COLS_MAX = 6;   // más de 6 en una fila se vuelve ilegible proyectado
 
   /* Hasta 6 tarjetas: una sola fila.
-     Más de 6: dos filas parejas, para que ninguna quede sola al final.   */
+     Más de 6: dos filas parejas, para que ninguna quede sola al final.
+
+     EN CELULAR, dos columnas como maximo. En Moft esta fila tiene cinco
+     tarjetas: a 370 px de pantalla le tocaban 53 px a cada una y las cifras se
+     partian en vertical, un digito por renglon -"$ 1 4 9 . 3 0 6"-. Con dos
+     columnas cada tarjeta recibe unos 175 px y la cifra entra completa.        */
+  function esCelular() {
+    return window.innerWidth <= 700;
+  }
+
   function columnasPara(n) {
+    if (esCelular()) return n <= 2 ? n : 2;
     if (n <= COLS_MAX) return n;
     return Math.ceil(n / 2);
   }
@@ -45539,7 +46009,9 @@ setTimeout(() => { initPosCatFilter(); buildPosChart(); }, 150);
       }
       if (!n) continue;
 
-      if (on) {
+      /* Se reparten las columnas en proyeccion Y en celular. Antes solo se hacia
+         en proyeccion, y en el telefono quedaba el reparto de escritorio. */
+      if (on || esCelular()) {
         caja.style.setProperty('grid-template-columns',
           'repeat(' + columnasPara(n) + ', minmax(0, 1fr))', 'important');
         caja.setAttribute('data-rfl-kpi', '1');
@@ -45825,8 +46297,14 @@ setTimeout(() => { initPosCatFilter(); buildPosChart(); }, 150);
          se puede llegar a el desplazando el informe. Cortar dato nunca es la
          solucion. */
       'body{max-width:100% !important}',
-      '.panel,.chart-card,.kpi-card,.card,p,td,th,li,div{overflow-wrap:break-word;',
+      /* Partir palabras solo en parrafos y celdas. Antes esto iba tambien en
+         cualquier div, y con las tarjetas de KPI estrechas los numeros se
+         astillaban en vertical: "$ 1 4 9 . 3 0 6", una cifra por renglon.
+         Una cifra NUNCA debe partirse: se marca para que se mantenga entera. */
+      'p,td,th,li,.panel-subtitle,.chart-note{overflow-wrap:break-word;',
       'word-break:normal}',
+      '.kpi-val,.kpi-lbl,.sv,.sl,.card-stat,.kpi-card{overflow-wrap:normal !important;',
+      'word-break:keep-all !important;hyphens:none !important}',
       /* OJO: aqui NO se toca el alto de html ni de body.
          Hubo un 'height:auto !important' para poder medir el informe, y eso
          rompio Naf Naf: su contenido vive en un marco con height:100%, y un
@@ -46786,18 +47264,46 @@ setTimeout(() => { initPosCatFilter(); buildPosChart(); }, 150);
      una pantalla ancha quede exactamente como estaba. Nada de esto toca cifras. */
   function rejillasCelular() {
     var celular = window.innerWidth <= 700;
-    var nodos = document.querySelectorAll('[style*="grid-template-columns"]');
-    for (var i = 0; i < nodos.length; i++) {
-      var el = nodos[i];
-      var actual = el.style.getPropertyValue('grid-template-columns');
+
+    /* Se busca POR MEDIDA, no por nombre de clase ni por atributo style.
+       El intento anterior solo miraba las rejillas escritas en el atributo
+       style, y la fila de KPI de Moft no esta ahi: quedaba en cinco columnas de
+       60 px y el texto se partia letra por letra -"PRE CIO PRO MED IO"-.
+       Aqui se recorre todo el documento, se pregunta al navegador cuantas
+       columnas tiene de verdad cada rejilla, y si a cada tarjeta le tocan menos
+       de 120 px se reparte en dos columnas; si aun asi no caben, en una. */
+    var ANCHO_MINIMO = 120;
+    /* Solo las filas de KPI y las rejillas escritas en el atributo style.
+       Antes esto recorria TODOS los elementos del informe preguntando estilos en
+       cada cambio del documento: miles de consultas repetidas que dejaron el
+       navegador sin responder. La lista corta hace el mismo trabajo. */
+    var todos = document.querySelectorAll(
+      CONTENEDORES_KPI + ', [style*="grid-template-columns"]');
+    for (var i = 0; i < todos.length; i++) {
+      var el = todos[i];
+      var cs = getComputedStyle(el);
+      if (cs.display !== 'grid' && cs.display !== 'inline-grid') continue;
+
+      var pistas = (cs.gridTemplateColumns || '').trim().split(/\s+/).filter(Boolean);
+      if (pistas.length < 3) continue;              /* dos o menos ya cabe */
+
       if (el.getAttribute('data-rfl-cols') === null) {
-        var m = /repeat\((\d+)/.exec(actual);
-        if (!m || +m[1] <= 2) continue;          /* dos o menos ya cabe */
-        el.setAttribute('data-rfl-cols', actual);
+        /* se guarda lo que el elemento tenia escrito, para poder devolverlo */
+        el.setAttribute('data-rfl-cols',
+          el.style.getPropertyValue('grid-template-columns') || '');
       }
-      var original = el.getAttribute('data-rfl-cols');
-      var quiere = celular ? 'repeat(2, minmax(0px, 1fr))' : original;
-      if (actual !== quiere) {
+
+      if (!celular) {
+        var previo = el.getAttribute('data-rfl-cols');
+        if (previo) el.style.setProperty('grid-template-columns', previo, 'important');
+        else el.style.removeProperty('grid-template-columns');
+        continue;
+      }
+
+      var disponible = el.clientWidth || window.innerWidth;
+      var columnas = disponible / 2 >= ANCHO_MINIMO ? 2 : 1;
+      var quiere = 'repeat(' + columnas + ', minmax(0px, 1fr))';
+      if (el.style.getPropertyValue('grid-template-columns') !== quiere) {
         el.style.setProperty('grid-template-columns', quiere, 'important');
       }
     }
