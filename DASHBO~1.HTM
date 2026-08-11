@@ -326,19 +326,24 @@ a.card, a.card:visited, a.card:hover { text-decoration: none; color: inherit; }
   html, body { height: auto; min-height: 100%; }
   body { min-height: 100vh; min-height: 100dvh; }
 
-  /* El visor de marca necesita su propio alto: ya no puede tomarlo de un body
-     de altura fija. */
-  #view-viewer.active { min-height: 100vh; min-height: 100dvh; }
+  /* ---- EL VISOR DE MARCA OCUPA LA PANTALLA, Y NADA MÁS ----
+     El visor se fija a la pantalla completa y el informe se recorre dentro de
+     su marco, que mide exactamente lo que mide la pantalla menos su barra.
+     Resultado: UN solo desplazamiento, el del informe.
 
-  /* EL MARCO CRECE CON SU CONTENIDO, NO AL CONTRARIO.
-     Antes: .frame-wrap tenía min-height:70dvh y #brandFrame height:100%. El
-     informe quedaba encerrado en una caja del 70% de la pantalla y se recorría
-     DENTRO de ella: en el teléfono se veía un cuadrito con los filtros y el
-     resto había que bajarlo con un desplazamiento aparte, como si no hubiera
-     cargado. Ahora el marco toma el alto de su informe y la que se desplaza es
-     la página completa, de corrido. El alto lo pone ajustarAltoMovil(). */
-  .frame-wrap { min-height: 0; height: auto; flex: none; overflow: visible; }
-  #brandFrame { height: auto; min-height: 60dvh; }
+     Por qué así y no de otra forma. Se intentó medir el alto del informe y
+     ponérselo al marco para que la página se desplazara de corrido. Falló, y de
+     una manera distinta en cada marca, porque cada informe está armado distinto:
+     alturas fijas, marcos anidados, gráficos que se pintan en un lienzo. Dejó
+     espacio en blanco al final, informes cortados, Naf Naf sin cargar, y hasta un
+     bucle que congeló el navegador. Esta versión no mide nada: el marco tiene el
+     tamaño de la pantalla y cada informe conserva su propia maqueta, igual que en
+     el computador. */
+  #view-viewer.active { position: fixed; inset: 0; z-index: 40;
+    height: 100vh; height: 100dvh; min-height: 0;
+    background: var(--rfl-arena-lt); }
+  .frame-wrap { flex: 1; min-height: 0; height: auto; overflow: hidden; }
+  #brandFrame { width: 100%; height: 100%; display: block; }
 
   /* La cabecera pasa a dos líneas: marca arriba, título debajo. En una sola
      línea el logo y el botón se comían el título. */
@@ -376,15 +381,10 @@ a.card, a.card:visited, a.card:hover { text-decoration: none; color: inherit; }
   .btn-back { font-size: 10px; padding: 7px 11px; }
   .btn-ext { font-size: 10px; }
 
-  /* El informe ocupa el ancho del teléfono y se acomoda solo.
-
-     Antes se le daban 1.100 px fijos y el dedo lo desplazaba de lado. Eso era
-     lo que se veía como un desplazamiento interno raro, con la barra de pestañas
-     cortada y una franja gris sin datos: el informe entero quedaba más ancho que
-     la pantalla. Ahora cada informe se compacta -ver el bloque de celular en
-     assets/rfl-proyeccion.js- y solo las tablas de muchas columnas se recorren,
-     cada una dentro de su propia caja. */
-  .frame-wrap { overflow-x: hidden; -webkit-overflow-scrolling: touch; }
+  /* El informe ocupa el ancho del teléfono, sin el ancho fijo de 1.100 px que
+     antes obligaba a recorrerlo de lado. Cada informe se compacta con el bloque
+     de celular de assets/rfl-proyeccion.js, y solo las tablas de muchas columnas
+     se recorren, cada una dentro de su propia caja. */
   .frame-wrap iframe { min-width: 0; width: 100%; }
 }
 </style>
@@ -924,195 +924,25 @@ function volverAlPanel() {
   recordarEnDireccion(null);
 }
 
-/* ---------- El marco del informe, a la altura de su contenido ----------
-   En el celular, un marco de altura fija encierra el informe y lo obliga a
-   recorrerse por dentro: se ve un cuadrito con los filtros y el resto parece no
-   haber cargado. Un marco no se estira solo, asi que aqui se le mide el alto al
-   informe y se le pone al marco. La pagina queda con un unico desplazamiento,
-   de corrido, como debe ser en un telefono.
+/* ---------- El informe se desplaza dentro de su marco ----------
+   Aqui hubo un intento mio que fallo y vale la pena dejarlo escrito para que no
+   se repita: medir el alto del informe y ponerselo al marco, para que la pagina
+   se desplazara de corrido.
 
-   Se vuelve a medir cuando el informe se redibuja -al filtrar o cambiar de
-   pestaña, el alto cambia- y al girar el telefono. En pantalla de computador no
-   se toca nada: ahi el marco sigue ocupando el alto de la ventana. */
-var vigilanteAlto = null;
-var vigilanteTamano = null;
-var ajustesAlto = 0;
-var ajustandoAlto = false;
+   Por que no sirve: cada informe esta armado distinto -alturas fijas, marcos
+   anidados, graficos que se pintan en un lienzo-, asi que la medida acertaba en
+   unas marcas y fallaba en otras, cada vez de una forma nueva: espacio en blanco
+   al final, informes cortados, Naf Naf sin cargar, y un caso de bucle que
+   congelo el navegador.
 
-/* FRENOS, y no son un adorno: sin ellos esto se convierte en un bucle que
-   congela el telefono. La cadena es: se fija el alto del marco -> el informe
-   reacomoda su contenido -> el vigia ve el cambio -> vuelve a fijar el alto...
-   Ya me paso: dejo el navegador sin responder.
-
-   Tres frenos:
-     1. tolerancia de 12 px: diferencias menores no valen un reajuste;
-     2. tope de 12 ajustes por informe, que se reinicia al abrir otra marca;
-     3. el vigia se apaga mientras se aplica el cambio, para no oirse a si mismo. */
-var TOLERANCIA_ALTO = 12;
-var MAX_AJUSTES_ALTO = 12;
-
-/* Cuanto mide DE VERDAD el contenido del informe.
-
-   No se usa scrollHeight, y hay una razon concreta: un marco no encoge. El
-   cuerpo del informe se estira para llenar el marco, asi que su scrollHeight
-   nunca baja del alto que el marco ya tiene. Al pasar de "Estudio de precios"
-   -larga- a "Ponderaciones" -corta-, el marco se quedaba con el alto de la
-   primera y sobraba un tramo en blanco que se seguia bajando sin nada que ver.
-
-   Aqui se mide el borde inferior del ultimo bloque con contenido. Esa medida no
-   depende del alto del marco, asi que sirve tanto para crecer como para encoger. */
-function altoDelContenido(dentro) {
-  var hijos = dentro.body.children;
-  var fondo = 0;
-  for (var i = 0; i < hijos.length; i++) {
-    var el = hijos[i];
-    var caja = el.getBoundingClientRect();
-    if (caja.height === 0) continue;                 /* ocultos, no cuentan */
-    var estilo = dentro.defaultView.getComputedStyle(el);
-    if (estilo.position === 'fixed') continue;       /* botones flotantes */
-    var margen = parseFloat(estilo.marginBottom) || 0;
-    fondo = Math.max(fondo, caja.bottom + dentro.documentElement.scrollTop + margen);
-  }
-  /* red de seguridad: si por alguna razon no se pudo medir, se usa el metodo viejo */
-  if (fondo < 80) fondo = Math.max(dentro.documentElement.scrollHeight,
-                                   dentro.body.scrollHeight);
-  return Math.ceil(fondo);
-}
-
-/* Naf Naf guarda su contenido en marcos DENTRO del informe, asi que el problema
-   del alto se repite un nivel mas abajo: el marco de dentro se queda corto, el
-   informe parece medir 468 px y quedan 416 px vacios.
-
-   Aqui se estiran esos marcos anidados a la medida de su propio contenido, antes
-   de medir el informe. Cada uno lleva su contador para que no se estire sin fin. */
-function estirarAnidados(dentro) {
-  var marcos = dentro.querySelectorAll('iframe');
-  for (var i = 0; i < marcos.length; i++) {
-    var fr = marcos[i];
-    var veces = +(fr.getAttribute('data-cel-veces') || 0);
-    if (veces >= 8) continue;
-    var sub = null;
-    try { sub = fr.contentDocument; } catch (e) { continue; }
-    if (!sub || !sub.body) continue;
-    var alto = altoDelContenido(sub);
-    if (!alto) continue;
-    var actual = parseFloat(fr.style.height) || fr.clientHeight || 0;
-    if (Math.abs(alto - actual) <= TOLERANCIA_ALTO) continue;
-    /* la caja que lo contiene tiene que poder crecer, o recortaria igual */
-    var caja = fr.parentElement, saltos = 0;
-    while (caja && caja !== dentro.body && saltos < 3) {
-      caja.style.setProperty('height', 'auto', 'important');
-      caja.style.setProperty('max-height', 'none', 'important');
-      caja.style.setProperty('overflow', 'visible', 'important');
-      caja = caja.parentElement; saltos++;
-    }
-    fr.style.setProperty('height', (alto + 2) + 'px', 'important');
-    fr.setAttribute('data-cel-veces', veces + 1);
-  }
-}
-
-function ajustarAltoMovil() {
-  if (ajustandoAlto) return;
-  if (window.innerWidth > 700) { frame.style.height = ''; return; }
-  if (ajustesAlto >= MAX_AJUSTES_ALTO) return;
-  var dentro = null;
-  try { dentro = frame.contentDocument; } catch (e) { return; }
-  if (!dentro || !dentro.body) return;
-  estirarAnidados(dentro);
-  var alto = altoDelContenido(dentro);
-  if (!alto) return;
-  var actual = parseFloat(frame.style.height) || 0;
-  if (Math.abs(alto - actual) <= TOLERANCIA_ALTO) return;
-
-  ajustandoAlto = true;
-  if (vigilanteAlto) vigilanteAlto.disconnect();
-  frame.style.height = (alto + 2) + 'px';
-  ajustesAlto++;
-  /* se vuelve a escuchar en el siguiente ciclo, ya con el alto aplicado */
-  setTimeout(function () {
-    ajustandoAlto = false;
-    try {
-      if (vigilanteAlto && frame.contentDocument && frame.contentDocument.body) {
-        vigilanteAlto.observe(frame.contentDocument.body,
-          { childList: true, subtree: true });
-      }
-    } catch (e) { /* el informe cambio de documento: se rehace en su load */ }
-  }, 120);
-}
+   Lo que se hace ahora: el marco ocupa exactamente el alto de la pantalla y el
+   informe se recorre por dentro, igual que en el computador. Un solo
+   desplazamiento, ninguna medicion, y cada informe conserva su propia maqueta.
+   Menos codigo y menos formas de fallar. */
 
 frame.addEventListener('load', () => {
   loading.classList.add('hidden');
   sincronizarEmbebido();
-
-  /* cada informe empieza con su cupo de ajustes completo */
-  ajustesAlto = 0;
-  ajustandoAlto = false;
-  frame.style.height = '';
-  ajustarAltoMovil();
-
-  /* El informe se redibuja al filtrar y al cambiar de pestaña, y ahi cambia de
-     alto. Se vigila solo la estructura -childList y subtree-, NO los atributos:
-     vigilar atributos hacia que el propio cambio de alto se contara como
-     novedad, y de ahi salia el bucle. */
-  try {
-    if (vigilanteAlto) vigilanteAlto.disconnect();
-    var dentro = frame.contentDocument;
-    if (dentro && dentro.body) {
-      var espera = null;
-      vigilanteAlto = new MutationObserver(function () {
-        clearTimeout(espera);
-        espera = setTimeout(ajustarAltoMovil, 300);
-      });
-      vigilanteAlto.observe(dentro.body, { childList: true, subtree: true });
-
-      /* VIGILANTE DE TAMAÑO, y hace falta de verdad: los graficos de Vivant se
-         pintan en un lienzo, y pintar NO cambia el HTML. El vigia de estructura
-         no se enteraba de que el informe habia crecido y quedaban 195 px del
-         final escondidos. Este observador si detecta que el documento cambio de
-         tamaño, aunque no se haya tocado una sola etiqueta. */
-      if (window.ResizeObserver) {
-        if (vigilanteTamano) vigilanteTamano.disconnect();
-        var esperaT = null;
-        vigilanteTamano = new ResizeObserver(function () {
-          /* si el cambio de tamaño lo acabo de provocar yo, no se responde: es
-             lo que producia el aviso "ResizeObserver loop" del navegador */
-          if (ajustandoAlto) return;
-          clearTimeout(esperaT);
-          esperaT = setTimeout(ajustarAltoMovil, 250);
-        });
-        vigilanteTamano.observe(dentro.documentElement);
-        vigilanteTamano.observe(dentro.body);
-      }
-
-      /* al mover un filtro se recalcula todo: ahi si conviene volver a medir,
-         y se le devuelve cupo porque es una accion de la persona, no un rebote */
-      /* Filtrar o cambiar de pestaña son acciones de la persona, no rebotes del
-         propio ajuste: ahi se devuelve cupo y se vuelve a medir. Sin esto, el
-         tope de ajustes podia agotarse y la pestaña nueva se quedaba con el alto
-         de la anterior. */
-      var remedir = function () {
-        ajustesAlto = Math.max(0, ajustesAlto - 4);
-        setTimeout(ajustarAltoMovil, 400);
-        setTimeout(ajustarAltoMovil, 1200);
-      };
-      dentro.addEventListener('change', remedir, true);
-      dentro.addEventListener('click', remedir, true);
-    }
-  } catch (e) { /* si el informe no se puede inspeccionar, queda el alto por CSS */ }
-
-  /* Repasos escalonados: las tablas y los graficos terminan de dibujarse
-     bastante despues del load, y los de lienzo hasta varios segundos. Cada
-     repaso pasa por los mismos frenos, asi que si ya esta a la medida no hace
-     nada. */
-  setTimeout(ajustarAltoMovil, 700);
-  setTimeout(ajustarAltoMovil, 1800);
-  setTimeout(ajustarAltoMovil, 3200);
-  setTimeout(ajustarAltoMovil, 5200);
-});
-
-window.addEventListener('resize', ajustarAltoMovil);
-window.addEventListener('orientationchange', function () {
-  setTimeout(ajustarAltoMovil, 300);
 });
 
 /* Enlace directo por hash + botón atrás del navegador */
@@ -5659,13 +5489,22 @@ function volverAlPanel(){try{if(window.parent&&window.parent!==window&&window.pa
       '.matrix-wrap,.table-wrap,.tabla-wrap,.fj-tablewrap,#fj-root .fj-tablewrap,',
       '.desc-wrap,.cel-scroll{max-width:100% !important;overflow-x:auto !important;',
       '-webkit-overflow-scrolling:touch}',
-      'html,body{overflow-x:hidden !important;max-width:100% !important}',
-      /* El informe debe poder crecer a lo alto. Si su documento se queda en el
-         alto de la ventana, el hub lo mide corto y vuelve a aparecer el
-         desplazamiento interno: un cuadrito con los filtros y el resto
-         escondido. Con alto automatico, el marco toma la medida completa. */
-      'html,body{height:auto !important;min-height:0 !important;',
-      'overflow-y:visible !important}',
+      /* NO se recorta el ancho. Antes habia aqui un 'overflow-x:hidden' para que
+         nada sobresaliera, y lo que hacia era CORTAR texto: en Moft y en Mango se
+         perdian palabras del lado derecho. Ahora el texto se parte cuando no
+         cabe, las tablas anchas se recorren en su caja, y si algo aun sobresale
+         se puede llegar a el desplazando el informe. Cortar dato nunca es la
+         solucion. */
+      'body{max-width:100% !important}',
+      '.panel,.chart-card,.kpi-card,.card,p,td,th,li,div{overflow-wrap:break-word;',
+      'word-break:normal}',
+      /* OJO: aqui NO se toca el alto de html ni de body.
+         Hubo un 'height:auto !important' para poder medir el informe, y eso
+         rompio Naf Naf: su contenido vive en un marco con height:100%, y un
+         padre en auto vuelve ese 100% en cero. La pantalla quedaba en blanco con
+         solo los botones de Colombia e Internacional.
+         Cada informe conserva el alto que su autor le dio y se recorre dentro de
+         su marco, igual que en el computador. */
       /* los filtros, a lo ancho y en tamaño de dedo: aqui SI funcionan, porque
          el navegador del telefono ejecuta JavaScript */
       /* Cada filtro ocupa su propio renglon completo. Comprobado en el celular:
@@ -10927,13 +10766,22 @@ renderAll();
       '.matrix-wrap,.table-wrap,.tabla-wrap,.fj-tablewrap,#fj-root .fj-tablewrap,',
       '.desc-wrap,.cel-scroll{max-width:100% !important;overflow-x:auto !important;',
       '-webkit-overflow-scrolling:touch}',
-      'html,body{overflow-x:hidden !important;max-width:100% !important}',
-      /* El informe debe poder crecer a lo alto. Si su documento se queda en el
-         alto de la ventana, el hub lo mide corto y vuelve a aparecer el
-         desplazamiento interno: un cuadrito con los filtros y el resto
-         escondido. Con alto automatico, el marco toma la medida completa. */
-      'html,body{height:auto !important;min-height:0 !important;',
-      'overflow-y:visible !important}',
+      /* NO se recorta el ancho. Antes habia aqui un 'overflow-x:hidden' para que
+         nada sobresaliera, y lo que hacia era CORTAR texto: en Moft y en Mango se
+         perdian palabras del lado derecho. Ahora el texto se parte cuando no
+         cabe, las tablas anchas se recorren en su caja, y si algo aun sobresale
+         se puede llegar a el desplazando el informe. Cortar dato nunca es la
+         solucion. */
+      'body{max-width:100% !important}',
+      '.panel,.chart-card,.kpi-card,.card,p,td,th,li,div{overflow-wrap:break-word;',
+      'word-break:normal}',
+      /* OJO: aqui NO se toca el alto de html ni de body.
+         Hubo un 'height:auto !important' para poder medir el informe, y eso
+         rompio Naf Naf: su contenido vive en un marco con height:100%, y un
+         padre en auto vuelve ese 100% en cero. La pantalla quedaba en blanco con
+         solo los botones de Colombia e Internacional.
+         Cada informe conserva el alto que su autor le dio y se recorre dentro de
+         su marco, igual que en el computador. */
       /* los filtros, a lo ancho y en tamaño de dedo: aqui SI funcionan, porque
          el navegador del telefono ejecuta JavaScript */
       /* Cada filtro ocupa su propio renglon completo. Comprobado en el celular:
@@ -15607,13 +15455,22 @@ function volverAlPanel(){try{if(window.parent&&window.parent!==window){if(typeof
       '.matrix-wrap,.table-wrap,.tabla-wrap,.fj-tablewrap,#fj-root .fj-tablewrap,',
       '.desc-wrap,.cel-scroll{max-width:100% !important;overflow-x:auto !important;',
       '-webkit-overflow-scrolling:touch}',
-      'html,body{overflow-x:hidden !important;max-width:100% !important}',
-      /* El informe debe poder crecer a lo alto. Si su documento se queda en el
-         alto de la ventana, el hub lo mide corto y vuelve a aparecer el
-         desplazamiento interno: un cuadrito con los filtros y el resto
-         escondido. Con alto automatico, el marco toma la medida completa. */
-      'html,body{height:auto !important;min-height:0 !important;',
-      'overflow-y:visible !important}',
+      /* NO se recorta el ancho. Antes habia aqui un 'overflow-x:hidden' para que
+         nada sobresaliera, y lo que hacia era CORTAR texto: en Moft y en Mango se
+         perdian palabras del lado derecho. Ahora el texto se parte cuando no
+         cabe, las tablas anchas se recorren en su caja, y si algo aun sobresale
+         se puede llegar a el desplazando el informe. Cortar dato nunca es la
+         solucion. */
+      'body{max-width:100% !important}',
+      '.panel,.chart-card,.kpi-card,.card,p,td,th,li,div{overflow-wrap:break-word;',
+      'word-break:normal}',
+      /* OJO: aqui NO se toca el alto de html ni de body.
+         Hubo un 'height:auto !important' para poder medir el informe, y eso
+         rompio Naf Naf: su contenido vive en un marco con height:100%, y un
+         padre en auto vuelve ese 100% en cero. La pantalla quedaba en blanco con
+         solo los botones de Colombia e Internacional.
+         Cada informe conserva el alto que su autor le dio y se recorre dentro de
+         su marco, igual que en el computador. */
       /* los filtros, a lo ancho y en tamaño de dedo: aqui SI funcionan, porque
          el navegador del telefono ejecuta JavaScript */
       /* Cada filtro ocupa su propio renglon completo. Comprobado en el celular:
@@ -21153,13 +21010,22 @@ function volverAlPanel(){try{if(window.parent&&window.parent!==window&&window.pa
       '.matrix-wrap,.table-wrap,.tabla-wrap,.fj-tablewrap,#fj-root .fj-tablewrap,',
       '.desc-wrap,.cel-scroll{max-width:100% !important;overflow-x:auto !important;',
       '-webkit-overflow-scrolling:touch}',
-      'html,body{overflow-x:hidden !important;max-width:100% !important}',
-      /* El informe debe poder crecer a lo alto. Si su documento se queda en el
-         alto de la ventana, el hub lo mide corto y vuelve a aparecer el
-         desplazamiento interno: un cuadrito con los filtros y el resto
-         escondido. Con alto automatico, el marco toma la medida completa. */
-      'html,body{height:auto !important;min-height:0 !important;',
-      'overflow-y:visible !important}',
+      /* NO se recorta el ancho. Antes habia aqui un 'overflow-x:hidden' para que
+         nada sobresaliera, y lo que hacia era CORTAR texto: en Moft y en Mango se
+         perdian palabras del lado derecho. Ahora el texto se parte cuando no
+         cabe, las tablas anchas se recorren en su caja, y si algo aun sobresale
+         se puede llegar a el desplazando el informe. Cortar dato nunca es la
+         solucion. */
+      'body{max-width:100% !important}',
+      '.panel,.chart-card,.kpi-card,.card,p,td,th,li,div{overflow-wrap:break-word;',
+      'word-break:normal}',
+      /* OJO: aqui NO se toca el alto de html ni de body.
+         Hubo un 'height:auto !important' para poder medir el informe, y eso
+         rompio Naf Naf: su contenido vive en un marco con height:100%, y un
+         padre en auto vuelve ese 100% en cero. La pantalla quedaba en blanco con
+         solo los botones de Colombia e Internacional.
+         Cada informe conserva el alto que su autor le dio y se recorre dentro de
+         su marco, igual que en el computador. */
       /* los filtros, a lo ancho y en tamaño de dedo: aqui SI funcionan, porque
          el navegador del telefono ejecuta JavaScript */
       /* Cada filtro ocupa su propio renglon completo. Comprobado en el celular:
@@ -24276,13 +24142,22 @@ renderIntV2();
       '.matrix-wrap,.table-wrap,.tabla-wrap,.fj-tablewrap,#fj-root .fj-tablewrap,',
       '.desc-wrap,.cel-scroll{max-width:100% !important;overflow-x:auto !important;',
       '-webkit-overflow-scrolling:touch}',
-      'html,body{overflow-x:hidden !important;max-width:100% !important}',
-      /* El informe debe poder crecer a lo alto. Si su documento se queda en el
-         alto de la ventana, el hub lo mide corto y vuelve a aparecer el
-         desplazamiento interno: un cuadrito con los filtros y el resto
-         escondido. Con alto automatico, el marco toma la medida completa. */
-      'html,body{height:auto !important;min-height:0 !important;',
-      'overflow-y:visible !important}',
+      /* NO se recorta el ancho. Antes habia aqui un 'overflow-x:hidden' para que
+         nada sobresaliera, y lo que hacia era CORTAR texto: en Moft y en Mango se
+         perdian palabras del lado derecho. Ahora el texto se parte cuando no
+         cabe, las tablas anchas se recorren en su caja, y si algo aun sobresale
+         se puede llegar a el desplazando el informe. Cortar dato nunca es la
+         solucion. */
+      'body{max-width:100% !important}',
+      '.panel,.chart-card,.kpi-card,.card,p,td,th,li,div{overflow-wrap:break-word;',
+      'word-break:normal}',
+      /* OJO: aqui NO se toca el alto de html ni de body.
+         Hubo un 'height:auto !important' para poder medir el informe, y eso
+         rompio Naf Naf: su contenido vive en un marco con height:100%, y un
+         padre en auto vuelve ese 100% en cero. La pantalla quedaba en blanco con
+         solo los botones de Colombia e Internacional.
+         Cada informe conserva el alto que su autor le dio y se recorre dentro de
+         su marco, igual que en el computador. */
       /* los filtros, a lo ancho y en tamaño de dedo: aqui SI funcionan, porque
          el navegador del telefono ejecuta JavaScript */
       /* Cada filtro ocupa su propio renglon completo. Comprobado en el celular:
@@ -27146,13 +27021,22 @@ render6();
       '.matrix-wrap,.table-wrap,.tabla-wrap,.fj-tablewrap,#fj-root .fj-tablewrap,',
       '.desc-wrap,.cel-scroll{max-width:100% !important;overflow-x:auto !important;',
       '-webkit-overflow-scrolling:touch}',
-      'html,body{overflow-x:hidden !important;max-width:100% !important}',
-      /* El informe debe poder crecer a lo alto. Si su documento se queda en el
-         alto de la ventana, el hub lo mide corto y vuelve a aparecer el
-         desplazamiento interno: un cuadrito con los filtros y el resto
-         escondido. Con alto automatico, el marco toma la medida completa. */
-      'html,body{height:auto !important;min-height:0 !important;',
-      'overflow-y:visible !important}',
+      /* NO se recorta el ancho. Antes habia aqui un 'overflow-x:hidden' para que
+         nada sobresaliera, y lo que hacia era CORTAR texto: en Moft y en Mango se
+         perdian palabras del lado derecho. Ahora el texto se parte cuando no
+         cabe, las tablas anchas se recorren en su caja, y si algo aun sobresale
+         se puede llegar a el desplazando el informe. Cortar dato nunca es la
+         solucion. */
+      'body{max-width:100% !important}',
+      '.panel,.chart-card,.kpi-card,.card,p,td,th,li,div{overflow-wrap:break-word;',
+      'word-break:normal}',
+      /* OJO: aqui NO se toca el alto de html ni de body.
+         Hubo un 'height:auto !important' para poder medir el informe, y eso
+         rompio Naf Naf: su contenido vive en un marco con height:100%, y un
+         padre en auto vuelve ese 100% en cero. La pantalla quedaba en blanco con
+         solo los botones de Colombia e Internacional.
+         Cada informe conserva el alto que su autor le dio y se recorre dentro de
+         su marco, igual que en el computador. */
       /* los filtros, a lo ancho y en tamaño de dedo: aqui SI funcionan, porque
          el navegador del telefono ejecuta JavaScript */
       /* Cada filtro ocupa su propio renglon completo. Comprobado en el celular:
@@ -32711,13 +32595,22 @@ window.addEventListener('message', function(e) {
       '.matrix-wrap,.table-wrap,.tabla-wrap,.fj-tablewrap,#fj-root .fj-tablewrap,',
       '.desc-wrap,.cel-scroll{max-width:100% !important;overflow-x:auto !important;',
       '-webkit-overflow-scrolling:touch}',
-      'html,body{overflow-x:hidden !important;max-width:100% !important}',
-      /* El informe debe poder crecer a lo alto. Si su documento se queda en el
-         alto de la ventana, el hub lo mide corto y vuelve a aparecer el
-         desplazamiento interno: un cuadrito con los filtros y el resto
-         escondido. Con alto automatico, el marco toma la medida completa. */
-      'html,body{height:auto !important;min-height:0 !important;',
-      'overflow-y:visible !important}',
+      /* NO se recorta el ancho. Antes habia aqui un 'overflow-x:hidden' para que
+         nada sobresaliera, y lo que hacia era CORTAR texto: en Moft y en Mango se
+         perdian palabras del lado derecho. Ahora el texto se parte cuando no
+         cabe, las tablas anchas se recorren en su caja, y si algo aun sobresale
+         se puede llegar a el desplazando el informe. Cortar dato nunca es la
+         solucion. */
+      'body{max-width:100% !important}',
+      '.panel,.chart-card,.kpi-card,.card,p,td,th,li,div{overflow-wrap:break-word;',
+      'word-break:normal}',
+      /* OJO: aqui NO se toca el alto de html ni de body.
+         Hubo un 'height:auto !important' para poder medir el informe, y eso
+         rompio Naf Naf: su contenido vive en un marco con height:100%, y un
+         padre en auto vuelve ese 100% en cero. La pantalla quedaba en blanco con
+         solo los botones de Colombia e Internacional.
+         Cada informe conserva el alto que su autor le dio y se recorre dentro de
+         su marco, igual que en el computador. */
       /* los filtros, a lo ancho y en tamaño de dedo: aqui SI funcionan, porque
          el navegador del telefono ejecuta JavaScript */
       /* Cada filtro ocupa su propio renglon completo. Comprobado en el celular:
@@ -35582,13 +35475,22 @@ window.addEventListener('message', function(e) {
       '.matrix-wrap,.table-wrap,.tabla-wrap,.fj-tablewrap,#fj-root .fj-tablewrap,',
       '.desc-wrap,.cel-scroll{max-width:100% !important;overflow-x:auto !important;',
       '-webkit-overflow-scrolling:touch}',
-      'html,body{overflow-x:hidden !important;max-width:100% !important}',
-      /* El informe debe poder crecer a lo alto. Si su documento se queda en el
-         alto de la ventana, el hub lo mide corto y vuelve a aparecer el
-         desplazamiento interno: un cuadrito con los filtros y el resto
-         escondido. Con alto automatico, el marco toma la medida completa. */
-      'html,body{height:auto !important;min-height:0 !important;',
-      'overflow-y:visible !important}',
+      /* NO se recorta el ancho. Antes habia aqui un 'overflow-x:hidden' para que
+         nada sobresaliera, y lo que hacia era CORTAR texto: en Moft y en Mango se
+         perdian palabras del lado derecho. Ahora el texto se parte cuando no
+         cabe, las tablas anchas se recorren en su caja, y si algo aun sobresale
+         se puede llegar a el desplazando el informe. Cortar dato nunca es la
+         solucion. */
+      'body{max-width:100% !important}',
+      '.panel,.chart-card,.kpi-card,.card,p,td,th,li,div{overflow-wrap:break-word;',
+      'word-break:normal}',
+      /* OJO: aqui NO se toca el alto de html ni de body.
+         Hubo un 'height:auto !important' para poder medir el informe, y eso
+         rompio Naf Naf: su contenido vive en un marco con height:100%, y un
+         padre en auto vuelve ese 100% en cero. La pantalla quedaba en blanco con
+         solo los botones de Colombia e Internacional.
+         Cada informe conserva el alto que su autor le dio y se recorre dentro de
+         su marco, igual que en el computador. */
       /* los filtros, a lo ancho y en tamaño de dedo: aqui SI funcionan, porque
          el navegador del telefono ejecuta JavaScript */
       /* Cada filtro ocupa su propio renglon completo. Comprobado en el celular:
@@ -37125,13 +37027,22 @@ window.addEventListener('message', function(e) {
       '.matrix-wrap,.table-wrap,.tabla-wrap,.fj-tablewrap,#fj-root .fj-tablewrap,',
       '.desc-wrap,.cel-scroll{max-width:100% !important;overflow-x:auto !important;',
       '-webkit-overflow-scrolling:touch}',
-      'html,body{overflow-x:hidden !important;max-width:100% !important}',
-      /* El informe debe poder crecer a lo alto. Si su documento se queda en el
-         alto de la ventana, el hub lo mide corto y vuelve a aparecer el
-         desplazamiento interno: un cuadrito con los filtros y el resto
-         escondido. Con alto automatico, el marco toma la medida completa. */
-      'html,body{height:auto !important;min-height:0 !important;',
-      'overflow-y:visible !important}',
+      /* NO se recorta el ancho. Antes habia aqui un 'overflow-x:hidden' para que
+         nada sobresaliera, y lo que hacia era CORTAR texto: en Moft y en Mango se
+         perdian palabras del lado derecho. Ahora el texto se parte cuando no
+         cabe, las tablas anchas se recorren en su caja, y si algo aun sobresale
+         se puede llegar a el desplazando el informe. Cortar dato nunca es la
+         solucion. */
+      'body{max-width:100% !important}',
+      '.panel,.chart-card,.kpi-card,.card,p,td,th,li,div{overflow-wrap:break-word;',
+      'word-break:normal}',
+      /* OJO: aqui NO se toca el alto de html ni de body.
+         Hubo un 'height:auto !important' para poder medir el informe, y eso
+         rompio Naf Naf: su contenido vive en un marco con height:100%, y un
+         padre en auto vuelve ese 100% en cero. La pantalla quedaba en blanco con
+         solo los botones de Colombia e Internacional.
+         Cada informe conserva el alto que su autor le dio y se recorre dentro de
+         su marco, igual que en el computador. */
       /* los filtros, a lo ancho y en tamaño de dedo: aqui SI funcionan, porque
          el navegador del telefono ejecuta JavaScript */
       /* Cada filtro ocupa su propio renglon completo. Comprobado en el celular:
@@ -41928,13 +41839,22 @@ function togglePiramides(){
       '.matrix-wrap,.table-wrap,.tabla-wrap,.fj-tablewrap,#fj-root .fj-tablewrap,',
       '.desc-wrap,.cel-scroll{max-width:100% !important;overflow-x:auto !important;',
       '-webkit-overflow-scrolling:touch}',
-      'html,body{overflow-x:hidden !important;max-width:100% !important}',
-      /* El informe debe poder crecer a lo alto. Si su documento se queda en el
-         alto de la ventana, el hub lo mide corto y vuelve a aparecer el
-         desplazamiento interno: un cuadrito con los filtros y el resto
-         escondido. Con alto automatico, el marco toma la medida completa. */
-      'html,body{height:auto !important;min-height:0 !important;',
-      'overflow-y:visible !important}',
+      /* NO se recorta el ancho. Antes habia aqui un 'overflow-x:hidden' para que
+         nada sobresaliera, y lo que hacia era CORTAR texto: en Moft y en Mango se
+         perdian palabras del lado derecho. Ahora el texto se parte cuando no
+         cabe, las tablas anchas se recorren en su caja, y si algo aun sobresale
+         se puede llegar a el desplazando el informe. Cortar dato nunca es la
+         solucion. */
+      'body{max-width:100% !important}',
+      '.panel,.chart-card,.kpi-card,.card,p,td,th,li,div{overflow-wrap:break-word;',
+      'word-break:normal}',
+      /* OJO: aqui NO se toca el alto de html ni de body.
+         Hubo un 'height:auto !important' para poder medir el informe, y eso
+         rompio Naf Naf: su contenido vive en un marco con height:100%, y un
+         padre en auto vuelve ese 100% en cero. La pantalla quedaba en blanco con
+         solo los botones de Colombia e Internacional.
+         Cada informe conserva el alto que su autor le dio y se recorre dentro de
+         su marco, igual que en el computador. */
       /* los filtros, a lo ancho y en tamaño de dedo: aqui SI funcionan, porque
          el navegador del telefono ejecuta JavaScript */
       /* Cada filtro ocupa su propio renglon completo. Comprobado en el celular:
@@ -45898,13 +45818,22 @@ setTimeout(() => { initPosCatFilter(); buildPosChart(); }, 150);
       '.matrix-wrap,.table-wrap,.tabla-wrap,.fj-tablewrap,#fj-root .fj-tablewrap,',
       '.desc-wrap,.cel-scroll{max-width:100% !important;overflow-x:auto !important;',
       '-webkit-overflow-scrolling:touch}',
-      'html,body{overflow-x:hidden !important;max-width:100% !important}',
-      /* El informe debe poder crecer a lo alto. Si su documento se queda en el
-         alto de la ventana, el hub lo mide corto y vuelve a aparecer el
-         desplazamiento interno: un cuadrito con los filtros y el resto
-         escondido. Con alto automatico, el marco toma la medida completa. */
-      'html,body{height:auto !important;min-height:0 !important;',
-      'overflow-y:visible !important}',
+      /* NO se recorta el ancho. Antes habia aqui un 'overflow-x:hidden' para que
+         nada sobresaliera, y lo que hacia era CORTAR texto: en Moft y en Mango se
+         perdian palabras del lado derecho. Ahora el texto se parte cuando no
+         cabe, las tablas anchas se recorren en su caja, y si algo aun sobresale
+         se puede llegar a el desplazando el informe. Cortar dato nunca es la
+         solucion. */
+      'body{max-width:100% !important}',
+      '.panel,.chart-card,.kpi-card,.card,p,td,th,li,div{overflow-wrap:break-word;',
+      'word-break:normal}',
+      /* OJO: aqui NO se toca el alto de html ni de body.
+         Hubo un 'height:auto !important' para poder medir el informe, y eso
+         rompio Naf Naf: su contenido vive en un marco con height:100%, y un
+         padre en auto vuelve ese 100% en cero. La pantalla quedaba en blanco con
+         solo los botones de Colombia e Internacional.
+         Cada informe conserva el alto que su autor le dio y se recorre dentro de
+         su marco, igual que en el computador. */
       /* los filtros, a lo ancho y en tamaño de dedo: aqui SI funcionan, porque
          el navegador del telefono ejecuta JavaScript */
       /* Cada filtro ocupa su propio renglon completo. Comprobado en el celular:
