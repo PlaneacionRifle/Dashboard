@@ -9,8 +9,8 @@
       "2027"
     ],
     "anioActivo": "2026",
-    "generado": "2026-08-18 08:05",
-    "fuenteModificada": "2026-08-06 08:04",
+    "generado": "2026-08-24 07:57",
+    "fuenteModificada": "2026-08-19 13:04",
     "totalMarcas": 7,
     "monedas": [
       "COP",
@@ -1338,8 +1338,8 @@
             "unidades": 116671.0
           },
           "Q3": {
-            "costo": 4719264.0,
-            "unidades": 121024.0
+            "costo": 5912613.0,
+            "unidades": 153942.0
           },
           "Q4": {
             "costo": 10143577.0,
@@ -1348,8 +1348,8 @@
         },
         "2027": {
           "Q1": {
-            "costo": 4015240.0,
-            "unidades": 108162.0
+            "costo": 4365626.0,
+            "unidades": 117572.0
           },
           "Q2": {
             "costo": null,
