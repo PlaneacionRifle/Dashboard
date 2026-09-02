@@ -9,8 +9,8 @@
       "2027"
     ],
     "anioActivo": "2026",
-    "generado": "2026-08-31 07:35",
-    "fuenteModificada": "2026-08-19 13:04",
+    "generado": "2026-09-02 07:44",
+    "fuenteModificada": "2026-09-01 15:30",
     "totalMarcas": 7,
     "monedas": [
       "COP",
@@ -388,16 +388,16 @@
         "2026": {
           "Q1": {
             "TOTAL": {
-              "costo": 16071845920.0,
-              "unidades": 332182.0
+              "costo": 15240822584.0,
+              "unidades": 301985.0
             },
             "BASICO": {
-              "costo": 1335860465.0,
+              "costo": 1335860466.0,
               "unidades": 25184.0
             },
             "COLECCIÓN": {
-              "costo": 12161288081.0,
-              "unidades": 255951.0
+              "costo": 11330264744.0,
+              "unidades": 225754.0
             },
             "ELEMENT": {
               "costo": 2574697374.0,
@@ -406,56 +406,56 @@
           },
           "Q2": {
             "TOTAL": {
-              "costo": 24962426222.0,
-              "unidades": 463726.0
+              "costo": 25931682404.0,
+              "unidades": 494933.0
             },
             "BASICO": {
-              "costo": 2871299863.0,
-              "unidades": 53476.0
+              "costo": 3564240959.0,
+              "unidades": 68654.0
             },
             "COLECCIÓN": {
-              "costo": 19301182720.0,
-              "unidades": 354519.0
+              "costo": 19441905983.0,
+              "unidades": 368022.0
             },
             "ELEMENT": {
-              "costo": 2789943639.0,
-              "unidades": 55731.0
+              "costo": 2925535462.0,
+              "unidades": 58257.0
             }
           },
           "Q3": {
             "TOTAL": {
-              "costo": 30935366500.0,
-              "unidades": 577530.0
+              "costo": 30042307170.0,
+              "unidades": 544024.0
             },
             "BASICO": {
-              "costo": 4450825500.0,
-              "unidades": 83193.0
+              "costo": 4085433170.0,
+              "unidades": 76093.0
             },
             "COLECCIÓN": {
-              "costo": 23459490000.0,
-              "unidades": 434435.0
+              "costo": 23928850000.0,
+              "unidades": 430375.0
             },
             "ELEMENT": {
-              "costo": 3025051000.0,
-              "unidades": 59902.0
+              "costo": 2028024000.0,
+              "unidades": 37556.0
             }
           },
           "Q4": {
             "TOTAL": {
-              "costo": 22121700500.0,
-              "unidades": 414244.0
+              "costo": 21828256810.0,
+              "unidades": 396401.0
             },
             "BASICO": {
-              "costo": 2287178500.0,
-              "unidades": 42751.0
+              "costo": 2135197610.0,
+              "unidades": 39769.0
             },
             "COLECCIÓN": {
-              "costo": 16572222000.0,
-              "unidades": 306893.0
+              "costo": 15113859200.0,
+              "unidades": 271832.0
             },
             "ELEMENT": {
-              "costo": 3262300000.0,
-              "unidades": 64600.0
+              "costo": 4579200000.0,
+              "unidades": 84800.0
             }
           }
         },
@@ -1707,16 +1707,16 @@
           },
           "Q3": {
             "TOTAL": {
-              "costo": 1063176400.0,
-              "unidades": 18587.0
+              "costo": 975030924.0,
+              "unidades": 16785.0
             },
             "ICONICO": {
               "costo": 0.0,
               "unidades": 0.0
             },
             "MODA": {
-              "costo": 1063176400.0,
-              "unidades": 18587.0
+              "costo": 975030924.0,
+              "unidades": 16785.0
             }
           },
           "Q4": {
