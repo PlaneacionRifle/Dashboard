@@ -9,8 +9,8 @@
       "2027"
     ],
     "anioActivo": "2026",
-    "generado": "2026-10-06 08:05",
-    "fuenteModificada": "2026-10-06 08:02",
+    "generado": "2026-10-13 07:44",
+    "fuenteModificada": "2026-10-06 16:13",
     "totalMarcas": 7,
     "monedas": [
       "COP",
@@ -32,7 +32,8 @@
         },
         "2026": {
           "Q1": 3669.0,
-          "Q2": 3443.0
+          "Q2": 3443.0,
+          "Q3": 3341.0
         }
       },
       "futuroDefault": 3800
@@ -172,45 +173,45 @@
           "Q4": {
             "TOTAL": {
               "costo": 23157557891.722404,
-              "unidades": 518836.0
+              "unidades": 518835.0
             },
             "ICONICO": {
               "costo": 7056462244.21994,
-              "unidades": 187590.0
+              "unidades": 183245.0
             },
             "MODA": {
               "costo": 16101095647.502464,
-              "unidades": 331246.0
+              "unidades": 335590.0
             }
           }
         },
         "2027": {
           "Q1": {
             "TOTAL": {
-              "costo": 11796287304.110352,
-              "unidades": 257615.23214285713
+              "costo": 11892778632.990063,
+              "unidades": 257614.0
             },
             "ICONICO": {
-              "costo": 3055339575.242742,
-              "unidades": 80154.85222371641
+              "costo": 2724900599.4820833,
+              "unidades": 71486.0
             },
             "MODA": {
-              "costo": 8740947728.867609,
-              "unidades": 177460.37991914072
+              "costo": 9167878033.507978,
+              "unidades": 186128.0
             }
           },
           "Q2": {
             "TOTAL": {
-              "costo": null,
-              "unidades": null
+              "costo": 17504895815.335342,
+              "unidades": 354407.0
             },
             "ICONICO": {
-              "costo": null,
-              "unidades": null
+              "costo": 4527558280.0817795,
+              "unidades": 110127.0
             },
             "MODA": {
-              "costo": null,
-              "unidades": null
+              "costo": 12977337535.253565,
+              "unidades": 244280.0
             }
           },
           "Q3": {
@@ -286,8 +287,8 @@
             "unidades": 275007.0
           },
           "Q2": {
-            "costo": null,
-            "unidades": null
+            "costo": 30041018247.564796,
+            "unidades": 381035.0
           },
           "Q3": {
             "costo": null,
@@ -956,44 +957,44 @@
           },
           "Q3": {
             "TOTAL": {
-              "costo": 781310799.8319328,
-              "unidades": 16260.0
+              "costo": 679808356.7865001,
+              "unidades": 14504.0
             },
             "MODA": {
-              "costo": 781310799.8319328,
-              "unidades": 16260.0
+              "costo": 679808356.7865001,
+              "unidades": 14504.0
             }
           },
           "Q4": {
             "TOTAL": {
-              "costo": 2655787752.6610646,
-              "unidades": 56320.0
+              "costo": 2982396420.0,
+              "unidades": 57548.0
             },
             "MODA": {
-              "costo": 2655787752.6610646,
-              "unidades": 56320.0
+              "costo": 2982396420.0,
+              "unidades": 57548.0
             }
           }
         },
         "2027": {
           "Q1": {
             "TOTAL": {
-              "costo": 1348270000.0,
-              "unidades": 25200.0
+              "costo": 1163713827.815372,
+              "unidades": 22950.0
             },
             "MODA": {
-              "costo": 1348270000.0,
-              "unidades": 25200.0
+              "costo": 1163713827.815372,
+              "unidades": 22950.0
             }
           },
           "Q2": {
             "TOTAL": {
-              "costo": null,
-              "unidades": null
+              "costo": 1682404013.2876136,
+              "unidades": 31100.0
             },
             "MODA": {
-              "costo": null,
-              "unidades": null
+              "costo": 1682404013.2876136,
+              "unidades": 31100.0
             }
           },
           "Q3": {
@@ -1047,22 +1048,22 @@
             "unidades": 35579.0
           },
           "Q3": {
-            "costo": 3656000000.0,
-            "unidades": 34469.0
+            "costo": 2540143964.76,
+            "unidades": 28828.0
           },
           "Q4": {
-            "costo": 8945000000.0,
-            "unidades": 82365.0
+            "costo": 7590000000.0,
+            "unidades": 76608.0
           }
         },
         "2027": {
           "Q1": {
-            "costo": 2827000000.0,
-            "unidades": 26210.0
+            "costo": 2826500000.0,
+            "unidades": 28428.0
           },
           "Q2": {
-            "costo": null,
-            "unidades": null
+            "costo": 3582000000.0,
+            "unidades": 33060.0
           },
           "Q3": {
             "costo": null,
