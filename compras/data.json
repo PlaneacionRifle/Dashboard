@@ -9,8 +9,8 @@
       "2027"
     ],
     "anioActivo": "2026",
-    "generado": "2026-10-19 08:18",
-    "fuenteModificada": "2026-10-06 16:13",
+    "generado": "2026-10-19 13:58",
+    "fuenteModificada": "2026-10-19 13:54",
     "totalMarcas": 7,
     "monedas": [
       "COP",
@@ -38,7 +38,8 @@
       },
       "futuroDefault": 3800
     },
-    "esDemo": false
+    "esDemo": false,
+    "diasCorteDesactualizado": 30
   },
   "medidas": [
     {
@@ -63,6 +64,12 @@
       "nombre": "Rifle",
       "estado": "completo",
       "diligenciado": null,
+      "corte": {
+        "fecha": "2026-10-15",
+        "estado": "ok",
+        "detalle": "Corte con 4 días",
+        "dias": 4
+      },
       "moneda": "COP",
       "segmentos": [
         "ICONICO",
@@ -305,6 +312,12 @@
       "nombre": "Naf Naf",
       "estado": "completo",
       "diligenciado": null,
+      "corte": {
+        "fecha": "2026-10-15",
+        "estado": "ok",
+        "detalle": "Corte con 4 días",
+        "dias": 4
+      },
       "moneda": "COP",
       "segmentos": [
         "BASICO",
@@ -596,6 +609,12 @@
       "nombre": "American Eagle",
       "estado": "completo",
       "diligenciado": null,
+      "corte": {
+        "fecha": "2026-10-15",
+        "estado": "ok",
+        "detalle": "Corte con 4 días",
+        "dias": 4
+      },
       "moneda": "USD",
       "segmentos": [
         "Core",
@@ -887,6 +906,12 @@
       "nombre": "Moft",
       "estado": "completo",
       "diligenciado": null,
+      "corte": {
+        "fecha": "2026-10-15",
+        "estado": "ok",
+        "detalle": "Corte con 4 días",
+        "dias": 4
+      },
       "moneda": "COP",
       "segmentos": [
         "MODA"
@@ -1080,6 +1105,12 @@
       "nombre": "American Eagle Internacional",
       "estado": "completo",
       "diligenciado": null,
+      "corte": {
+        "fecha": "2026-10-15",
+        "estado": "ok",
+        "detalle": "Corte con 4 días",
+        "dias": 4
+      },
       "moneda": "USD",
       "segmentos": [
         "Ecuador",
@@ -1371,6 +1402,12 @@
       "nombre": "Mango",
       "estado": "completo",
       "diligenciado": null,
+      "corte": {
+        "fecha": "2026-10-15",
+        "estado": "ok",
+        "detalle": "Corte con 4 días",
+        "dias": 4
+      },
       "moneda": "COP",
       "segmentos": [
         "BASICOS",
@@ -1613,6 +1650,12 @@
       "nombre": "ViVt",
       "estado": "completo",
       "diligenciado": null,
+      "corte": {
+        "fecha": "2026-10-15",
+        "estado": "ok",
+        "detalle": "Corte con 4 días",
+        "dias": 4
+      },
       "moneda": "COP",
       "segmentos": [
         "ICONICO",
