@@ -140,6 +140,22 @@
   .meta-line{border-top:1px solid var(--linea);padding-top:14px;line-height:1.9;}
   .meta-line b{color:var(--tinta);font-weight:600;}
 
+  /* Fecha de corte por marca (la digita cada marca en su hoja) */
+  .corte-lbl{display:block;font-family:"IBM Plex Mono",monospace;font-size:11px;font-weight:500;
+    color:var(--texto-2);margin-top:3px;letter-spacing:.01em;}
+  .corte-lbl.est-warn{color:var(--pend);}
+  .corte-lbl.est-bad{color:var(--demo);}
+  tbody tr.grupo .corte-lbl{color:rgba(255,255,255,.7);}
+  tbody tr.grupo .corte-lbl.est-warn{color:#F2C98A;}
+  tbody tr.grupo .corte-lbl.est-bad{color:#F3B8AE;}
+  .corte-aviso{margin:10px 0 0;padding:9px 14px;border-radius:var(--r);background:var(--pend-tint);
+    border:1px solid #E9D3AE;color:var(--pend);font-size:13px;line-height:1.5;}
+  .corte-aviso b{color:var(--tinta);font-weight:600;}
+  .corte-aviso[hidden]{display:none;}
+  .legend .corte-lbl{display:inline;margin:0;}
+  body.proyeccion .corte-lbl{font-size:13px;}
+  body.proyeccion .corte-aviso{font-size:14px;}
+
   .readout .total .var{font-size:12px;color:#5A6B7A;margin-top:4px;font-family:"IBM Plex Mono",monospace;line-height:1.5;}
   .readout .total .cons{font-size:13px;margin-top:8px;padding-top:8px;border-top:1px dashed var(--linea-fuerte);
     color:var(--tinta);font-family:"IBM Plex Mono",monospace;font-weight:500;}
@@ -298,6 +314,7 @@
         <div class="cons" id="totalCons"></div>
       </div>
     </div>
+    <p class="corte-aviso" id="corteAviso" hidden></p>
   </section>
 
   <div class="vista-top" id="vistaTop">
@@ -350,6 +367,7 @@
     <div class="legend">
       <span><span class="dot ok"></span> Diligenciado</span>
       <span><span class="dot pend"></span> Pendiente</span>
+      <span id="legendCorte"></span>
       <span><span class="badge cop">COP</span> Pesos</span>
       <span><span class="badge usd">USD</span> Dólares</span>
     </div>
@@ -439,6 +457,34 @@
     if(v===null||v===undefined) return "—";
     if(med.tipo==="moneda") return med.perUnidad ? fmtMoneda(v,moneda,false)+" /u" : fmtMoneda(v,moneda,true);
     return numAbrev(v);
+  }
+
+  // ---- Fecha de corte por marca (data.json -> marca.corte) ----
+  const MESES_CO=["ene","feb","mar","abr","may","jun","jul","ago","sep","oct","nov","dic"];
+  const CORTE_TXT={sin_fecha:"Sin fecha de corte",invalida:"Fecha de corte inválida",
+                   varias:"Varias fechas de corte",volatil:"Corte con fórmula automática"};
+  function escH(t){return String(t).replace(/[&<>"']/g,ch=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[ch]));}
+  function fmtFechaCorte(iso){ if(!iso) return ""; const [y,m,d]=iso.split("-").map(Number);
+    return String(d).padStart(2,"0")+"-"+MESES_CO[m-1]+"-"+y; }
+  function diasDesde(iso){ const [y,m,d]=iso.split("-").map(Number);
+    const f=new Date(y,m-1,d), h=new Date(); h.setHours(0,0,0,0); return Math.round((h-f)/86400000); }
+  function limiteCorte(){ const v=DATA.meta.diasCorteDesactualizado; return (v===undefined)?null:v; }
+  // La antigüedad se evalúa al ABRIR el informe, no al generarlo.
+  function corteVista(m){
+    const k=m.corte||{fecha:null,estado:"sin_fecha",detalle:"Sin dato de corte en data.json"};
+    if(!k.fecha) return {fecha:null,clase:"est-bad",txt:CORTE_TXT[k.estado]||"Sin fecha de corte",tip:k.detalle};
+    const dias=diasDesde(k.fecha), lim=limiteCorte();
+    let clase="", extra="";
+    if(dias<0){ clase="est-warn"; extra=" · fecha futura"; }
+    else if(lim!==null && dias>lim){ clase="est-warn"; extra=" · "+dias+" días"; }
+    const tip="Fecha de corte digitada por la marca: "+fmtFechaCorte(k.fecha)+
+              (dias>=0?" (hace "+dias+" días)":" (posterior a hoy)");
+    return {fecha:k.fecha,clase,txt:"Corte "+fmtFechaCorte(k.fecha)+extra,tip};
+  }
+  function spanCorte(m){
+    const cv=corteVista(m);
+    const s=document.createElement("span"); s.className="corte-lbl "+cv.clase; s.textContent=cv.txt; s.title=cv.tip;
+    return s;
   }
 
   function reportadaEnAnioX(m,anio){return m.estado==="completo" && m.valores && m.valores[anio];}
@@ -616,6 +662,12 @@
     document.getElementById("stamp").innerHTML=
       "Generado <b>"+DATA.meta.generado+"</b><br>Fuente modificada <b>"+DATA.meta.fuenteModificada+"</b>";
 
+    const lim=limiteCorte();
+    document.getElementById("legendCorte").innerHTML=
+      '<span class="corte-lbl">Corte dd-mmm-aaaa</span> digitado por la marca · '+
+      '<span class="corte-lbl est-warn">ámbar</span> '+(lim!==null?"más de "+lim+" días o ":"")+'fecha futura · '+
+      '<span class="corte-lbl est-bad">rojo</span> sin fecha o no válida';
+
     construirTabs();
     construirSeg("segMedidas", medidasUI().map(m=>({id:m.id,label:m.label})), medidaActiva, id=>{medidaActiva=id;render();});
     construirSeg("segVista", [{id:"consolidado",label:"Consolidado"},{id:"segmento",label:"Por segmento"}], vista, id=>{vista=id;render();});
@@ -685,6 +737,7 @@
       const dot=document.createElement("span"); dot.className="dot "+(m.estado==="completo"?"ok":"pend");
       const nom=document.createElement("span"); nom.className="nombre"; nom.textContent=m.nombre;
       const bd=document.createElement("span"); bd.className="badge "+m.moneda.toLowerCase(); bd.textContent=m.moneda;
+      lab.title=corteVista(m).txt;
       lab.append(cb,box,dot,nom,bd);
       cont.appendChild(lab);
     });
@@ -699,6 +752,7 @@
     const bd=document.createElement("span"); bd.className="badge "+m.moneda.toLowerCase(); bd.textContent=m.moneda;
     wrap.appendChild(bd);
     td.appendChild(wrap);
+    td.appendChild(spanCorte(m));
     return td;
   }
 
@@ -842,6 +896,18 @@
     document.getElementById("totalAnioNota").textContent="Año "+anioActivo+enMoneda+" · solo marcas reportadas y seleccionadas";
     document.getElementById("totalCons").innerHTML="";
 
+    // Aviso: marcas del total con fechas de corte distintas (o sin fecha válida)
+    const av=document.getElementById("corteAviso");
+    const lista=rep.map(m=>({n:m.nombre,c:corteVista(m)}));
+    const fechas=new Set(lista.filter(x=>x.c.fecha).map(x=>x.c.fecha));
+    const faltan=lista.some(x=>!x.c.fecha);
+    if(lista.length>=2 && fechas.size>0 && (fechas.size>1 || faltan)){
+      av.hidden=false;
+      av.innerHTML="<b>Cortes distintos entre las marcas del total:</b> "+
+        lista.map(x=>escH(x.n)+" "+(x.c.fecha?fmtFechaCorte(x.c.fecha):"<i>sin fecha válida</i>")).join(" · ")+
+        ". El total suma planes de compra actualizados en fechas diferentes.";
+    }else{ av.hidden=true; av.innerHTML=""; }
+
     const pend=DATA.marcas.filter(m=>!reportadaEnAnio(m)).map(m=>m.nombre);
     document.getElementById("notaPend").textContent= pend.length
       ? "Sin información para "+anioActivo+" ("+pend.length+"): "+pend.join(", ")+". Excluidas de los totales."
@@ -851,8 +917,9 @@
       ? "Los valores en unidades no dependen de la moneda."
       : "Todos los valores están expresados en <b>"+monedaVista+"</b>, convertidos con la TRM de cierre de cada trimestre; los trimestres sin cierre usan la TRM futura (<b>"+esCO.format(trmFuturo)+"</b>). Ver pestaña TRM.";
     document.getElementById("metaLine").innerHTML=
-      "Fuente: archivo compartido OneDrive · GCO. Última modificación del dato: <b>"+DATA.meta.fuenteModificada+
-      "</b>. Reporte generado: <b>"+DATA.meta.generado+"</b>. "+nota;
+      "Fuente: archivo compartido OneDrive · GCO. Última modificación del archivo: <b>"+DATA.meta.fuenteModificada+
+      "</b>. Reporte generado: <b>"+DATA.meta.generado+"</b>. "+nota+
+      " La fecha de corte de cada marca la digita la marca en su hoja (columna FECHA CORTE).";
   }
 
   function spanSign(txt, sign){
