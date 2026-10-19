@@ -153,6 +153,7 @@
   .corte-aviso b{color:var(--tinta);font-weight:600;}
   .corte-aviso[hidden]{display:none;}
   .legend .corte-lbl{display:inline;margin:0;}
+  .corte-lbl.al-final{margin-top:6px;}
   body.proyeccion .corte-lbl{font-size:13px;}
   body.proyeccion .corte-aviso{font-size:14px;}
 
@@ -599,6 +600,10 @@
     nombresIndicadores(conPpto).forEach(n=>{
       const d=document.createElement("div"); d.className="mini leg"; d.textContent=n; tdIzq.appendChild(d);
     });
+    // La fecha de corte va al final, para que los nombres de indicadores
+    // queden alineados con sus valores en las columnas Q1..Q4 y Total.
+    const corte=tdIzq.querySelector(":scope > .corte-lbl");
+    if(corte){ corte.classList.add("al-final"); tdIzq.appendChild(corte); }
   }
   // Celda de datos: valor + valores de indicadores (sin nombre; el nombre va a la izquierda)
   function celdaValor(td, vShow, cmpC, cmpP, med, moneda){
