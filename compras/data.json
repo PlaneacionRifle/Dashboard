@@ -9,8 +9,8 @@
       "2027"
     ],
     "anioActivo": "2026",
-    "generado": "2026-10-21 08:55",
-    "fuenteModificada": "2026-10-21 08:54",
+    "generado": "2026-10-26 07:51",
+    "fuenteModificada": "2026-10-22 16:35",
     "totalMarcas": 7,
     "monedas": [
       "COP",
@@ -65,10 +65,10 @@
       "estado": "completo",
       "diligenciado": null,
       "corte": {
-        "fecha": "2026-10-15",
+        "fecha": "2026-10-06",
         "estado": "ok",
-        "detalle": "Corte con 6 días",
-        "dias": 6
+        "detalle": "Corte con 20 días",
+        "dias": 20
       },
       "moneda": "COP",
       "segmentos": [
@@ -313,10 +313,10 @@
       "estado": "completo",
       "diligenciado": null,
       "corte": {
-        "fecha": "2026-10-15",
+        "fecha": "2026-10-06",
         "estado": "ok",
-        "detalle": "Corte con 6 días",
-        "dias": 6
+        "detalle": "Corte con 20 días",
+        "dias": 20
       },
       "moneda": "COP",
       "segmentos": [
@@ -610,10 +610,10 @@
       "estado": "completo",
       "diligenciado": null,
       "corte": {
-        "fecha": "2026-10-15",
+        "fecha": "2026-10-22",
         "estado": "ok",
-        "detalle": "Corte con 6 días",
-        "dias": 6
+        "detalle": "Corte con 4 días",
+        "dias": 4
       },
       "moneda": "USD",
       "segmentos": [
@@ -791,20 +791,20 @@
           },
           "Q2": {
             "TOTAL": {
-              "costo": null,
-              "unidades": null
+              "costo": 1409433.469999999,
+              "unidades": 179925.0
             },
             "Core": {
-              "costo": null,
-              "unidades": null
+              "costo": 808303.2199999983,
+              "unidades": 86570.0
             },
             "Core Fashion": {
-              "costo": null,
-              "unidades": null
+              "costo": 395206.1400000009,
+              "unidades": 72820.0
             },
             "Fashion": {
-              "costo": null,
-              "unidades": null
+              "costo": 205924.10999999993,
+              "unidades": 20535.0
             }
           },
           "Q3": {
@@ -888,8 +888,8 @@
             "unidades": 336526.0
           },
           "Q2": {
-            "costo": null,
-            "unidades": null
+            "costo": 9342959.0,
+            "unidades": 322171.0
           },
           "Q3": {
             "costo": null,
@@ -907,10 +907,10 @@
       "estado": "completo",
       "diligenciado": null,
       "corte": {
-        "fecha": "2026-10-15",
+        "fecha": "2026-10-06",
         "estado": "ok",
-        "detalle": "Corte con 6 días",
-        "dias": 6
+        "detalle": "Corte con 20 días",
+        "dias": 20
       },
       "moneda": "COP",
       "segmentos": [
@@ -1106,10 +1106,10 @@
       "estado": "completo",
       "diligenciado": null,
       "corte": {
-        "fecha": "2026-10-20",
+        "fecha": "2026-10-21",
         "estado": "ok",
-        "detalle": "Corte con 1 días",
-        "dias": 1
+        "detalle": "Corte con 5 días",
+        "dias": 5
       },
       "moneda": "USD",
       "segmentos": [
@@ -1403,7 +1403,7 @@
       "estado": "completo",
       "diligenciado": null,
       "corte": {
-        "fecha": "2026-10-15",
+        "fecha": "2026-10-20",
         "estado": "ok",
         "detalle": "Corte con 6 días",
         "dias": 6
@@ -1651,10 +1651,10 @@
       "estado": "completo",
       "diligenciado": null,
       "corte": {
-        "fecha": "2026-10-15",
+        "fecha": "2026-10-06",
         "estado": "ok",
-        "detalle": "Corte con 6 días",
-        "dias": 6
+        "detalle": "Corte con 20 días",
+        "dias": 20
       },
       "moneda": "COP",
       "segmentos": [
