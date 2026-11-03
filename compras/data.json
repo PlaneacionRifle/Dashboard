@@ -9,7 +9,7 @@
       "2027"
     ],
     "anioActivo": "2026",
-    "generado": "2026-10-26 07:51",
+    "generado": "2026-11-03 07:52",
     "fuenteModificada": "2026-10-22 16:35",
     "totalMarcas": 7,
     "monedas": [
@@ -67,8 +67,8 @@
       "corte": {
         "fecha": "2026-10-06",
         "estado": "ok",
-        "detalle": "Corte con 20 días",
-        "dias": 20
+        "detalle": "Corte con 28 días",
+        "dias": 28
       },
       "moneda": "COP",
       "segmentos": [
@@ -315,8 +315,8 @@
       "corte": {
         "fecha": "2026-10-06",
         "estado": "ok",
-        "detalle": "Corte con 20 días",
-        "dias": 20
+        "detalle": "Corte con 28 días",
+        "dias": 28
       },
       "moneda": "COP",
       "segmentos": [
@@ -612,8 +612,8 @@
       "corte": {
         "fecha": "2026-10-22",
         "estado": "ok",
-        "detalle": "Corte con 4 días",
-        "dias": 4
+        "detalle": "Corte con 12 días",
+        "dias": 12
       },
       "moneda": "USD",
       "segmentos": [
@@ -909,8 +909,8 @@
       "corte": {
         "fecha": "2026-10-06",
         "estado": "ok",
-        "detalle": "Corte con 20 días",
-        "dias": 20
+        "detalle": "Corte con 28 días",
+        "dias": 28
       },
       "moneda": "COP",
       "segmentos": [
@@ -1108,8 +1108,8 @@
       "corte": {
         "fecha": "2026-10-21",
         "estado": "ok",
-        "detalle": "Corte con 5 días",
-        "dias": 5
+        "detalle": "Corte con 13 días",
+        "dias": 13
       },
       "moneda": "USD",
       "segmentos": [
@@ -1405,8 +1405,8 @@
       "corte": {
         "fecha": "2026-10-20",
         "estado": "ok",
-        "detalle": "Corte con 6 días",
-        "dias": 6
+        "detalle": "Corte con 14 días",
+        "dias": 14
       },
       "moneda": "COP",
       "segmentos": [
@@ -1653,8 +1653,8 @@
       "corte": {
         "fecha": "2026-10-06",
         "estado": "ok",
-        "detalle": "Corte con 20 días",
-        "dias": 20
+        "detalle": "Corte con 28 días",
+        "dias": 28
       },
       "moneda": "COP",
       "segmentos": [
