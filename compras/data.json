@@ -9,7 +9,7 @@
       "2027"
     ],
     "anioActivo": "2026",
-    "generado": "2026-11-11 09:28",
+    "generado": "2026-11-17 08:28",
     "fuenteModificada": "2026-11-11 09:27",
     "totalMarcas": 7,
     "monedas": [
@@ -67,8 +67,8 @@
       "corte": {
         "fecha": "2026-11-10",
         "estado": "ok",
-        "detalle": "Corte con 1 días",
-        "dias": 1
+        "detalle": "Corte con 7 días",
+        "dias": 7
       },
       "moneda": "COP",
       "segmentos": [
@@ -315,8 +315,8 @@
       "corte": {
         "fecha": "2026-11-05",
         "estado": "ok",
-        "detalle": "Corte con 6 días",
-        "dias": 6
+        "detalle": "Corte con 12 días",
+        "dias": 12
       },
       "moneda": "COP",
       "segmentos": [
@@ -612,8 +612,8 @@
       "corte": {
         "fecha": "2026-10-22",
         "estado": "ok",
-        "detalle": "Corte con 20 días",
-        "dias": 20
+        "detalle": "Corte con 26 días",
+        "dias": 26
       },
       "moneda": "USD",
       "segmentos": [
@@ -909,8 +909,8 @@
       "corte": {
         "fecha": "2026-11-11",
         "estado": "ok",
-        "detalle": "Corte con 0 días",
-        "dias": 0
+        "detalle": "Corte con 6 días",
+        "dias": 6
       },
       "moneda": "COP",
       "segmentos": [
@@ -1108,8 +1108,8 @@
       "corte": {
         "fecha": "2026-10-21",
         "estado": "ok",
-        "detalle": "Corte con 21 días",
-        "dias": 21
+        "detalle": "Corte con 27 días",
+        "dias": 27
       },
       "moneda": "USD",
       "segmentos": [
@@ -1405,8 +1405,8 @@
       "corte": {
         "fecha": "2026-10-20",
         "estado": "ok",
-        "detalle": "Corte con 22 días",
-        "dias": 22
+        "detalle": "Corte con 28 días",
+        "dias": 28
       },
       "moneda": "COP",
       "segmentos": [
@@ -1653,8 +1653,8 @@
       "corte": {
         "fecha": "2026-11-05",
         "estado": "ok",
-        "detalle": "Corte con 6 días",
-        "dias": 6
+        "detalle": "Corte con 12 días",
+        "dias": 12
       },
       "moneda": "COP",
       "segmentos": [
