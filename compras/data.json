@@ -9,7 +9,7 @@
       "2027"
     ],
     "anioActivo": "2026",
-    "generado": "2026-11-17 08:28",
+    "generado": "2026-11-23 07:39",
     "fuenteModificada": "2026-11-11 09:27",
     "totalMarcas": 7,
     "monedas": [
@@ -67,8 +67,8 @@
       "corte": {
         "fecha": "2026-11-10",
         "estado": "ok",
-        "detalle": "Corte con 7 días",
-        "dias": 7
+        "detalle": "Corte con 13 días",
+        "dias": 13
       },
       "moneda": "COP",
       "segmentos": [
@@ -315,8 +315,8 @@
       "corte": {
         "fecha": "2026-11-05",
         "estado": "ok",
-        "detalle": "Corte con 12 días",
-        "dias": 12
+        "detalle": "Corte con 18 días",
+        "dias": 18
       },
       "moneda": "COP",
       "segmentos": [
@@ -611,9 +611,9 @@
       "diligenciado": null,
       "corte": {
         "fecha": "2026-10-22",
-        "estado": "ok",
-        "detalle": "Corte con 26 días",
-        "dias": 26
+        "estado": "desactualizada",
+        "detalle": "Corte con 32 días (límite 30)",
+        "dias": 32
       },
       "moneda": "USD",
       "segmentos": [
@@ -909,8 +909,8 @@
       "corte": {
         "fecha": "2026-11-11",
         "estado": "ok",
-        "detalle": "Corte con 6 días",
-        "dias": 6
+        "detalle": "Corte con 12 días",
+        "dias": 12
       },
       "moneda": "COP",
       "segmentos": [
@@ -1107,9 +1107,9 @@
       "diligenciado": null,
       "corte": {
         "fecha": "2026-10-21",
-        "estado": "ok",
-        "detalle": "Corte con 27 días",
-        "dias": 27
+        "estado": "desactualizada",
+        "detalle": "Corte con 33 días (límite 30)",
+        "dias": 33
       },
       "moneda": "USD",
       "segmentos": [
@@ -1404,9 +1404,9 @@
       "diligenciado": null,
       "corte": {
         "fecha": "2026-10-20",
-        "estado": "ok",
-        "detalle": "Corte con 28 días",
-        "dias": 28
+        "estado": "desactualizada",
+        "detalle": "Corte con 34 días (límite 30)",
+        "dias": 34
       },
       "moneda": "COP",
       "segmentos": [
@@ -1653,8 +1653,8 @@
       "corte": {
         "fecha": "2026-11-05",
         "estado": "ok",
-        "detalle": "Corte con 12 días",
-        "dias": 12
+        "detalle": "Corte con 18 días",
+        "dias": 18
       },
       "moneda": "COP",
       "segmentos": [
